@@ -63,4 +63,13 @@ Agri-Claim leverages **remote sensing** and **artificial intelligence** to help 
 - **GitHub Actions** - CI/CD Pipeline
 - **AWS/GCP** - Cloud deployment
 
-## 📋 System Architecture
+## 🎯 How It Works
+
+1. **Registration**: Farmer registers with land details and documents
+2. **Farm Mapping**: Farmer draws farm boundary using interactive maps
+3. **Claim Submission**: Farmer submits claim with calamity details
+4. **Satellite Analysis**: System fetches current and historical satellite data
+5. **NDVI Calculation**: AI calculates crop health and damage percentage
+6. **Blockchain Recording**: Claim details stored on immutable ledger
+7. **Auto-Processing**: System approves/rejects based on damage threshold
+8. **Payout**: Approved claims trigger automatic bank transfers
