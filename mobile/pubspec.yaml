@@ -2,7 +2,6 @@ name: agri_claim_mobile
 description: Agri-Claim Flutter Mobile App
 
 publish_to: 'none'
-
 version: 1.0.0+1
 
 environment:
@@ -21,6 +20,4 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/images/
-    - assets/google.png
-    - assets/microsoft.png
+    - assets/image/
