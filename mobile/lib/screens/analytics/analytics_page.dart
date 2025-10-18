@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import '../weather/weather_page.dart';
+import '../crop_scan/crop_scan_page.dart';
 
 class AnalyticsPage extends StatefulWidget {
   const AnalyticsPage({super.key});
@@ -117,6 +118,10 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
             _buildHealthMetricsGrid(),
             const SizedBox(height: 20),
 
+            // Crop Scan Section - NEW POSITION
+            _buildCropScanSection(),
+            const SizedBox(height: 20),
+
             // Satellite Data Section
             _buildSatelliteDataSection(),
             const SizedBox(height: 20),
@@ -138,7 +143,133 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     );
   }
 
-  // ADDED: Missing weather section method
+  // NEW: Crop Scan Section as a separate box
+  Widget _buildCropScanSection() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.scanner, color: Colors.green, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Crop Health Analysis',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[800],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Get instant AI-powered analysis of your crop health using advanced computer vision technology.',
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildCropScanQuickAction(context),
+        ],
+      ),
+    );
+  }
+
+  // UPDATED: Crop Scan Quick Action Method
+  Widget _buildCropScanQuickAction(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CropScanPage(),
+          ),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.green[50]!,
+              Colors.lightGreen[100]!,
+            ],
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.green[200]!),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.green.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.green,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(Icons.camera_alt, color: Colors.white, size: 24),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Start Health Scan',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.green[900],
+                      fontSize: 16,
+                    ),
+                  ),
+                  Text(
+                    'AI-powered analysis of crop health',
+                    style: TextStyle(
+                      color: Colors.green[700],
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.green,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(Icons.arrow_forward, color: Colors.white, size: 16),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // UPDATED: Weather Section (removed crop scan from here)
   Widget _buildWeatherSection() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -221,7 +352,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
           ),
           const SizedBox(height: 12),
 
-          // Weather quick action
+          // Weather quick action only
           _buildWeatherQuickAction(context),
         ],
       ),

@@ -7,6 +7,7 @@ import '../../models/user_model.dart';
 import '../claims/new_claim_page.dart';
 import '../analytics/analytics_page.dart';
 import '../weather/weather_page.dart';
+import '../crop_scan/crop_scan_page.dart'; // ADD THIS IMPORT
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -334,7 +335,15 @@ class DashboardPage extends StatelessWidget {
                 subtitle: "Health check",
                 icon: Icons.camera_alt,
                 color: Colors.purple,
-                onTap: () {},
+                onTap: () {
+                  // UPDATED: Redirect to CropScanPage
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CropScanPage(),
+                    ),
+                  );
+                },
               ),
               const SizedBox(width: 12),
               _ActionCard(
