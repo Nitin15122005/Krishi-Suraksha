@@ -1,4 +1,7 @@
+// ignore_for_file: prefer_const_constructors
+
 import 'package:flutter/material.dart';
+import '../weather/weather_page.dart';
 
 class AnalyticsPage extends StatefulWidget {
   const AnalyticsPage({super.key});
@@ -49,6 +52,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     {'date': 'Dec 01', 'ndvi': 0.58, 'health': 0.70},
   ];
 
+  // This field is now being used in _buildWeatherSection
   final List<Map<String, dynamic>> _weatherForecast = [
     {'day': 'Today', 'temp': '28°C', 'rain': '10%', 'icon': Icons.wb_sunny},
     {'day': 'Tom', 'temp': '27°C', 'rain': '20%', 'icon': Icons.wb_cloudy},
@@ -130,6 +134,96 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
             const SizedBox(height: 20),
           ],
         ),
+      ),
+    );
+  }
+
+  // ADDED: Missing weather section method
+  Widget _buildWeatherSection() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.cloud, color: Colors.green, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Weather & Environment',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[800],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Current weather metrics
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _WeatherMetric(
+                label: 'Temperature',
+                value: '${_cropData['temperature']}°C',
+                icon: Icons.thermostat,
+                color: Colors.orange,
+              ),
+              _WeatherMetric(
+                label: 'Humidity',
+                value: '${_cropData['humidity']}%',
+                icon: Icons.water_drop,
+                color: Colors.blue,
+              ),
+              _WeatherMetric(
+                label: 'Rainfall',
+                value: '${_cropData['rainfall']}mm',
+                icon: Icons.beach_access,
+                color: Colors.blue,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Weather forecast
+          Text(
+            '5-Day Forecast',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[700],
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 100,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: _weatherForecast.length,
+              itemBuilder: (context, index) {
+                final forecast = _weatherForecast[index];
+                return _WeatherForecastCard(forecast: forecast);
+              },
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Weather quick action
+          _buildWeatherQuickAction(context),
+        ],
       ),
     );
   }
@@ -338,79 +432,51 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     );
   }
 
-  Widget _buildWeatherSection() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+  Widget _buildWeatherQuickAction(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => WeatherPage(),
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.cloud, color: Colors.green, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                'Weather & Environment',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[800],
-                ),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.blue[50],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.blue[100]!),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.cloud, color: Colors.blue, size: 24),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Detailed Weather',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.blue[800],
+                    ),
+                  ),
+                  Text(
+                    'View complete forecast',
+                    style: TextStyle(
+                      color: Colors.blue[600],
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _WeatherMetric(
-                  label: 'Temperature',
-                  value: '${_cropData['temperature']}°C',
-                  icon: Icons.thermostat,
-                  color: Colors.orange,
-                ),
-              ),
-              Expanded(
-                child: _WeatherMetric(
-                  label: 'Humidity',
-                  value: '${_cropData['humidity']}%',
-                  icon: Icons.water_drop,
-                  color: Colors.blue,
-                ),
-              ),
-              Expanded(
-                child: _WeatherMetric(
-                  label: 'Rainfall',
-                  value: '${_cropData['rainfall']}mm',
-                  icon: Icons.beach_access,
-                  color: Colors.purple,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            height: 100,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: _weatherForecast.length,
-              itemBuilder: (context, index) {
-                final forecast = _weatherForecast[index];
-                return _WeatherForecastCard(forecast: forecast);
-              },
             ),
-          ),
-        ],
+            Icon(Icons.arrow_forward_ios, color: Colors.blue, size: 16),
+          ],
+        ),
       ),
     );
   }
@@ -833,6 +899,7 @@ class _SatelliteDataRow extends StatelessWidget {
   }
 }
 
+// NOW USED: This widget is now referenced in _buildWeatherSection
 class _WeatherMetric extends StatelessWidget {
   final String label;
   final String value;
@@ -872,6 +939,7 @@ class _WeatherMetric extends StatelessWidget {
   }
 }
 
+// NOW USED: This widget is now referenced in _buildWeatherSection
 class _WeatherForecastCard extends StatelessWidget {
   final Map<String, dynamic> forecast;
 

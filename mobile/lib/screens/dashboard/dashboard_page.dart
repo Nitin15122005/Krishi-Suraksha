@@ -6,6 +6,7 @@ import '../claims/claims_report_page.dart';
 import '../../models/user_model.dart';
 import '../claims/new_claim_page.dart';
 import '../analytics/analytics_page.dart';
+import '../weather/weather_page.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -341,7 +342,14 @@ class DashboardPage extends StatelessWidget {
                 subtitle: "Forecast",
                 icon: Icons.cloud,
                 color: Colors.orange,
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => WeatherPage(),
+                    ),
+                  );
+                },
               ),
             ],
           ),

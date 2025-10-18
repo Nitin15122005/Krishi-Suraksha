@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_const_constructors
+
 import 'package:flutter/material.dart';
 import 'screens/auth/login_page.dart';
 import 'screens/dashboard/dashboard_page.dart';
