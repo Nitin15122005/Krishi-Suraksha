@@ -1,6 +1,9 @@
+// ignore_for_file: prefer_const_constructors, use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'signup_page.dart';
+import '../dashboard/dashboard_page.dart'; // Add dashboard import
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -14,6 +17,7 @@ class _LoginPageState extends State<LoginPage> {
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -22,17 +26,63 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  void _submitForm() {
+  void _submitForm() async {
     if (_formKey.currentState!.validate()) {
-      // Handle login logic here
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Logging in...'),
-          backgroundColor: Colors.green,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      setState(() {
+        _isLoading = true;
+      });
+
+      // BACKEND: Login API integration
+      try {
+        // TODO: Replace with actual API call
+        // Example API structure:
+        /*
+        final response = await http.post(
+          Uri.parse('https://your-api.com/auth/login'),
+          body: {
+            'phone': _phoneController.text,
+            'password': _passwordController.text,
+          },
+        );
+        
+        if (response.statusCode == 200) {
+          final userData = json.decode(response.body);
+          // Save token to shared preferences
+          // Navigate to dashboard
+        } else {
+          // Handle error
+        }
+        */
+
+        // Simulate API delay
+        await Future.delayed(Duration(seconds: 2));
+
+        // BACKEND: Remove this simulation after API integration
+        // For now, simulate successful login
+        _navigateToDashboard();
+      } catch (e) {
+        // BACKEND: Handle API errors
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Login failed: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } finally {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
+  }
+
+  void _navigateToDashboard() {
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => DashboardPage()),
+      (route) => false,
+    );
   }
 
   void _navigateToSignup() {
@@ -102,7 +152,7 @@ class _LoginPageState extends State<LoginPage> {
                 Container(
                   padding: EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.25), // Lighter transparency
+                    color: Colors.white.withOpacity(0.25),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: Colors.white.withOpacity(0.4),
@@ -137,7 +187,10 @@ class _LoginPageState extends State<LoginPage> {
                                 color: Colors.green.shade700,
                               ),
                               border: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 16,
+                              ),
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
@@ -182,7 +235,10 @@ class _LoginPageState extends State<LoginPage> {
                                 },
                               ),
                               border: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 16,
+                              ),
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
@@ -204,7 +260,9 @@ class _LoginPageState extends State<LoginPage> {
                             onPressed: () {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text('Forgot password feature coming soon!'),
+                                  content: Text(
+                                    'Forgot password feature coming soon!',
+                                  ),
                                   behavior: SnackBarBehavior.floating,
                                 ),
                               );
@@ -232,26 +290,60 @@ class _LoginPageState extends State<LoginPage> {
                         SizedBox(
                           width: double.infinity,
                           height: 56,
-                          child: ElevatedButton(
-                            onPressed: _submitForm,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green.shade700.withOpacity(0.8),
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              elevation: 5,
-                              shadowColor: Colors.black.withOpacity(0.3),
-                            ),
-                            child: Text(
-                              'Login',
-                              style: GoogleFonts.inter(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ),
+                          child: _isLoading
+                              ? ElevatedButton(
+                                  onPressed: null,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor:
+                                        Colors.green.shade700.withOpacity(0.6),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      SizedBox(width: 12),
+                                      Text(
+                                        'Logging in...',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : ElevatedButton(
+                                  onPressed: _submitForm,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor:
+                                        Colors.green.shade700.withOpacity(0.8),
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    elevation: 5,
+                                    shadowColor: Colors.black.withOpacity(0.3),
+                                  ),
+                                  child: Text(
+                                    'Login',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ),
                         ),
                         SizedBox(height: 20),
 
@@ -299,7 +391,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
 
-                SizedBox(height: 150),
+                SizedBox(height: 100),
               ],
             ),
           ),

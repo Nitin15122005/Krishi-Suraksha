@@ -12,6 +12,11 @@
 .swiftpm/
 migrate_working_dir/
 
+# Temporary files
+tempCodeRunnerFile.dart
+*.tmp
+*.temp
+
 # IntelliJ related
 *.iml
 *.ipr
