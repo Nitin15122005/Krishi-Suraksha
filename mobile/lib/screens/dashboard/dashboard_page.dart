@@ -2,8 +2,10 @@
 
 import 'package:flutter/material.dart';
 import '../profile/profile_page.dart';
-import '../claims/claims_report_page.dart'; // Add this import
+import '../claims/claims_report_page.dart';
 import '../../models/user_model.dart';
+import '../claims/new_claim_page.dart';
+import '../analytics/analytics_page.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -68,8 +70,8 @@ class DashboardPage extends StatelessWidget {
               delegate: SliverChildListDelegate([
                 const SizedBox(height: 16),
 
-                // Crop Health Card
-                _buildCropHealthCard(),
+                // Crop Health Card - Pass context here
+                _buildCropHealthCard(context),
 
                 const SizedBox(height: 20),
 
@@ -96,7 +98,7 @@ class DashboardPage extends StatelessWidget {
     );
   }
 
-  Widget _buildCropHealthCard() {
+  Widget _buildCropHealthCard(BuildContext context) {
     double cropHealth = 0.75; // 75% health
     Color healthColor = cropHealth > 0.7
         ? Colors.green
@@ -104,124 +106,134 @@ class DashboardPage extends StatelessWidget {
             ? Colors.orange
             : Colors.red;
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AnalyticsPage(),
           ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Text(
-                "Crop Health",
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[800],
-                ),
-              ),
-              const Spacer(),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: healthColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  "Good",
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 20),
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Text(
+                  "Crop Health",
                   style: TextStyle(
-                    color: healthColor,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 12,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[800],
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Row(
-            children: [
-              // Circular Progress
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  SizedBox(
-                    width: 120,
-                    height: 120,
-                    child: CircularProgressIndicator(
-                      value: cropHealth,
-                      strokeWidth: 12,
-                      backgroundColor: Colors.grey[200],
-                      valueColor: AlwaysStoppedAnimation<Color>(healthColor),
+                const Spacer(),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: healthColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    "Good",
+                    style: TextStyle(
+                      color: healthColor,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
                     ),
                   ),
-                  Column(
-                    children: [
-                      Text(
-                        "${(cropHealth * 100).toInt()}%",
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: healthColor,
-                        ),
-                      ),
-                      Text(
-                        "Health",
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(width: 24),
-
-              // Health Metrics
-              Expanded(
-                child: Column(
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                // Circular Progress
+                Stack(
+                  alignment: Alignment.center,
                   children: [
-                    _HealthMetric(
-                      label: "Soil Moisture",
-                      value: 0.8,
-                      color: Colors.green,
+                    SizedBox(
+                      width: 120,
+                      height: 120,
+                      child: CircularProgressIndicator(
+                        value: cropHealth,
+                        strokeWidth: 12,
+                        backgroundColor: Colors.grey[200],
+                        valueColor: AlwaysStoppedAnimation<Color>(healthColor),
+                      ),
                     ),
-                    const SizedBox(height: 12),
-                    _HealthMetric(
-                      label: "Nutrient Level",
-                      value: 0.6,
-                      color: Colors.orange,
-                    ),
-                    const SizedBox(height: 12),
-                    _HealthMetric(
-                      label: "Pest Control",
-                      value: 0.9,
-                      color: Colors.green,
-                    ),
-                    const SizedBox(height: 12),
-                    _HealthMetric(
-                      label: "Growth Stage",
-                      value: 0.7,
-                      color: Colors.green,
+                    Column(
+                      children: [
+                        Text(
+                          "${(cropHealth * 100).toInt()}%",
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: healthColor,
+                          ),
+                        ),
+                        Text(
+                          "Health",
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ),
-            ],
-          ),
-        ],
+                const SizedBox(width: 24),
+
+                // Health Metrics
+                Expanded(
+                  child: Column(
+                    children: [
+                      _HealthMetric(
+                        label: "Soil Moisture",
+                        value: 0.8,
+                        color: Colors.green,
+                      ),
+                      const SizedBox(height: 12),
+                      _HealthMetric(
+                        label: "Nutrient Level",
+                        value: 0.6,
+                        color: Colors.orange,
+                      ),
+                      const SizedBox(height: 12),
+                      _HealthMetric(
+                        label: "Pest Control",
+                        value: 0.9,
+                        color: Colors.green,
+                      ),
+                      const SizedBox(height: 12),
+                      _HealthMetric(
+                        label: "Growth Stage",
+                        value: 0.7,
+                        color: Colors.green,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -292,7 +304,12 @@ class DashboardPage extends StatelessWidget {
                 icon: Icons.add_circle_outline,
                 color: Colors.green,
                 onTap: () {
-                  // TODO: Navigate to new claim page
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => NewClaimPage(),
+                    ),
+                  );
                 },
               ),
               const SizedBox(width: 12),
@@ -477,6 +494,14 @@ class DashboardPage extends StatelessWidget {
                   builder: (context) => ClaimsReportPage(),
                 ),
               );
+            } else if (index == 2) {
+              // Analytics tab
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AnalyticsPage(),
+                ),
+              );
             } else if (index == 3) {
               // Profile tab
               final demoUser = UserModel(
@@ -486,7 +511,6 @@ class DashboardPage extends StatelessWidget {
                 phoneNumber: "+91 9876543210",
                 profileImage: null,
               );
-
               Navigator.push(
                 context,
                 MaterialPageRoute(

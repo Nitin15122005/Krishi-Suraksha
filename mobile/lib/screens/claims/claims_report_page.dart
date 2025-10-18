@@ -1,3 +1,6 @@
+// ignore_for_file: prefer_const_constructors
+
+import 'package:agri_claim_mobile/screens/claims/new_claim_page.dart';
 import 'package:flutter/material.dart';
 import 'claims_list_page.dart';
 
@@ -220,7 +223,12 @@ class ClaimsReportPage extends StatelessWidget {
                   icon: Icons.add_circle_outline,
                   color: Colors.green,
                   onTap: () {
-                    // TODO: Navigate to new claim filing page
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => NewClaimPage(),
+                      ),
+                    );
                   },
                 ),
               ),
