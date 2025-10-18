@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../map/map_selection_page.dart'; // ADD THIS IMPORT
 
 class WeatherPage extends StatefulWidget {
   const WeatherPage({super.key});
@@ -9,7 +10,7 @@ class WeatherPage extends StatefulWidget {
 
 class _WeatherPageState extends State<WeatherPage> {
   // TODO: BACKEND - Replace with actual weather API data
-  final Map<String, dynamic> _currentWeather = {
+  Map<String, dynamic> _currentWeather = {
     'temperature': 28,
     'feelsLike': 30,
     'condition': 'Sunny',
@@ -86,6 +87,34 @@ class _WeatherPageState extends State<WeatherPage> {
     {'name': 'Wind Speed', 'value': 12, 'status': 'Moderate', 'trend': 'down'},
   ];
 
+  // UPDATED: Change location method with map integration
+  void _changeLocation() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MapSelectionPage(
+          isFarmLocation: true,
+        ),
+      ),
+    );
+
+    if (result != null && mounted) {
+      setState(() {
+        _currentWeather['location'] = result['address'];
+        // You can also store lat/lng for weather API calls
+        _currentWeather['latitude'] = result['latitude'];
+        _currentWeather['longitude'] = result['longitude'];
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Location updated to ${result['address']}'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -113,7 +142,7 @@ class _WeatherPageState extends State<WeatherPage> {
           ),
           IconButton(
             icon: Icon(Icons.location_on, color: Colors.green[800]),
-            onPressed: _changeLocation,
+            onPressed: _changeLocation, // UPDATED: Now uses map selection
           ),
         ],
       ),
@@ -121,25 +150,25 @@ class _WeatherPageState extends State<WeatherPage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // Current Weather Card - KEEPING ORIGINAL
+            // Current Weather Card
             _buildCurrentWeatherCard(),
             const SizedBox(height: 20),
 
-            // Hourly Forecast - MODIFIED
+            // Hourly Forecast
             _buildHourlyForecast(),
             const SizedBox(height: 20),
 
-            // Daily Forecast - KEEPING ORIGINAL
+            // Daily Forecast
             _buildDailyForecast(),
             const SizedBox(height: 20),
 
-            // Weather Alerts - KEEPING ORIGINAL
+            // Weather Alerts
             if (_weatherAlerts.isNotEmpty) ...[
               _buildWeatherAlerts(),
               const SizedBox(height: 20),
             ],
 
-            // Agricultural Metrics - MODIFIED
+            // Agricultural Metrics
             _buildAgriculturalMetrics(),
             const SizedBox(height: 20),
           ],
@@ -302,16 +331,15 @@ class _WeatherPageState extends State<WeatherPage> {
           ),
         ),
         const SizedBox(height: 16),
-        // Fixed height container for horizontal scroll - MODIFIED
         Container(
-          height: 110, // Reduced height to prevent overflow
+          height: 110,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: _hourlyForecast.length,
             itemBuilder: (context, index) {
               final hour = _hourlyForecast[index];
               return Container(
-                width: 70, // Reduced width for each card
+                width: 70,
                 margin: EdgeInsets.only(
                   right: index == _hourlyForecast.length - 1 ? 0 : 8,
                 ),
@@ -434,10 +462,8 @@ class _WeatherPageState extends State<WeatherPage> {
             ],
           ),
           const SizedBox(height: 16),
-          // Dynamic grid height based on number of items - MODIFIED
           Container(
-            height: (_agriculturalMetrics.length / 2).ceil() *
-                100.0, // Calculate height based on rows
+            height: (_agriculturalMetrics.length / 2).ceil() * 100.0,
             child: GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -445,7 +471,7 @@ class _WeatherPageState extends State<WeatherPage> {
                 crossAxisCount: 2,
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
-                childAspectRatio: 1.6, // Consistent aspect ratio
+                childAspectRatio: 1.6,
               ),
               itemCount: _agriculturalMetrics.length,
               itemBuilder: (context, index) {
@@ -460,28 +486,10 @@ class _WeatherPageState extends State<WeatherPage> {
   }
 
   void _refreshWeather() {
-    // TODO: BACKEND - Refresh weather data from API
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Refreshing weather data...'),
         backgroundColor: Colors.blue,
-      ),
-    );
-  }
-
-  void _changeLocation() {
-    // TODO: Implement location change
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Change Location'),
-        content: Text('Location change feature coming soon!'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('OK'),
-          ),
-        ],
       ),
     );
   }
@@ -535,46 +543,44 @@ class _HourlyForecastCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(8), // Reduced padding
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: Colors.blue[50],
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.blue[100]!),
       ),
       child: Column(
-        mainAxisAlignment:
-            MainAxisAlignment.spaceEvenly, // Better space distribution
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           Text(
             forecast['time'],
             style: TextStyle(
               fontWeight: FontWeight.w600,
               color: Colors.blue[800],
-              fontSize: 11, // Smaller font
+              fontSize: 11,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          Icon(forecast['icon'], color: Colors.blue, size: 20), // Smaller icon
+          Icon(forecast['icon'], color: Colors.blue, size: 20),
           Text(
             '${forecast['temp']}°',
             style: TextStyle(
               fontWeight: FontWeight.w600,
               color: Colors.grey[800],
-              fontSize: 12, // Smaller font
+              fontSize: 12,
             ),
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.water_drop,
-                  color: Colors.blue, size: 10), // Smaller icon
+              Icon(Icons.water_drop, color: Colors.blue, size: 10),
               const SizedBox(width: 2),
               Text(
                 '${forecast['rain']}%',
                 style: TextStyle(
                   color: Colors.blue[600],
-                  fontSize: 9, // Smaller font
+                  fontSize: 9,
                 ),
               ),
             ],
