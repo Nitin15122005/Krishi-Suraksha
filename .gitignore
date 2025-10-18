@@ -14,7 +14,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+# The next line is commented out to allow tracking of the 'lib' directory in your project.
+# lib/
 lib64/
 parts/
 sdist/
