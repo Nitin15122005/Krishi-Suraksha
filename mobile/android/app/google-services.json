@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "573325056181",
+    "project_id": "agri-claim-mp",
+    "storage_bucket": "agri-claim-mp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:573325056181:android:4a4fd1f499591f80e206fc",
+        "android_client_info": {
+          "package_name": "com.example.agri_claim_mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCKNhHziQCxqo0XCqzRoGNDu9KZVKv4TiQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

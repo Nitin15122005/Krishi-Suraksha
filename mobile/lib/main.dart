@@ -1,13 +1,19 @@
 // ignore_for_file: prefer_const_constructors
 
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'screens/auth/login_page.dart';
 import 'screens/dashboard/dashboard_page.dart';
 import 'screens/profile/profile_page.dart';
 import 'models/user_model.dart';
 import 'screens/claims/new_claim_page.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
+  await Firebase.initializeApp();
+
   runApp(const MyApp());
 }
 

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'signup_page.dart';
 import '../dashboard/dashboard_page.dart';
+import 'package:agri_claim_mobile/services/firebase_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -19,6 +20,8 @@ class _LoginPageState extends State<LoginPage> {
   bool _isPasswordVisible = false;
   bool _isLoading = false;
 
+  final FirebaseService _firebaseService = FirebaseService();
+
   @override
   void dispose() {
     _phoneController.dispose();
@@ -32,36 +35,51 @@ class _LoginPageState extends State<LoginPage> {
         _isLoading = true;
       });
 
-      // BACKEND: Login API integration with FarmerID generation
       try {
-        // TODO: Replace with actual API call
-        /*
-        final response = await http.post(
-          Uri.parse('https://your-api.com/auth/login'),
-          body: {
-            'phone': _phoneController.text,
-            'password': _passwordController.text,
-          },
-        );
-        
-        if (response.statusCode == 200) {
-          final userData = json.decode(response.body);
-          // Save token to shared preferences
-          // Save FarmerID to local storage
-          // Navigate to dashboard
-        } else {
-          // Handle error
+        // Check if phone number exists in Firebase
+        final phoneExists =
+            await _firebaseService.isPhoneNumberExists(_phoneController.text);
+
+        if (!phoneExists) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Phone number not found. Please sign up first.'),
+              backgroundColor: Colors.orange,
+              behavior: SnackBarBehavior.floating,
+              duration: Duration(seconds: 3),
+            ),
+          );
+          setState(() {
+            _isLoading = false;
+          });
+          return;
         }
-        */
 
-        // Simulate API delay
-        await Future.delayed(Duration(seconds: 2));
+        // Verify password using the new hashed method
+        final isValid = await _firebaseService.verifyLogin(
+            _phoneController.text, _passwordController.text);
 
-        // BACKEND: Remove this simulation after API integration
-        // For now, simulate successful login with FarmerID
-        _navigateToDashboard();
+        if (isValid) {
+          // Get user data for farmerId
+          final userData =
+              await _firebaseService.getUserByPhone(_phoneController.text);
+          final farmerId = userData?['profile']?['farmerId'] as String?;
+
+          // TODO: Save farmerId to shared preferences/local storage
+          // TODO: Update user session in Firebase
+
+          _navigateToDashboard();
+        } else {
+          // Password doesn't match
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Invalid password. Please try again.'),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
       } catch (e) {
-        // BACKEND: Handle API errors
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Login failed: $e'),

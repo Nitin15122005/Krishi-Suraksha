@@ -3,7 +3,6 @@
 import 'package:flutter/material.dart';
 import '../weather/weather_page.dart';
 import '../crop_scan/crop_scan_page.dart';
-import '../../models/user_model.dart';
 
 class AnalyticsPage extends StatefulWidget {
   const AnalyticsPage({super.key});
