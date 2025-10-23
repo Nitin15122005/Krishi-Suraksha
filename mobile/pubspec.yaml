@@ -18,6 +18,11 @@ dependencies:
   google_maps_flutter: ^2.2.3
   geolocator: ^9.0.2
   geocoding: ^2.0.5
+  # TODO: Add Firebase dependencies later
+  # firebase_core: ^2.24.0
+  # cloud_firestore: ^4.13.0
+  # firebase_storage: ^11.5.0
+  # firebase_auth: ^4.17.1
 
 dev_dependencies:
   flutter_test:
@@ -27,4 +32,4 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/image/
+    - assets/image/login_bg.png

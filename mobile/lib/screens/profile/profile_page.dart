@@ -50,8 +50,8 @@ class ProfilePage extends StatelessWidget {
             _buildPersonalInfoSection(),
             const SizedBox(height: 30),
 
-            // Land Details
-            _buildLandDetailsSection(context),
+            // Farm Details
+            _buildFarmDetailsSection(context),
             const SizedBox(height: 30),
 
             // Bank Details
@@ -114,6 +114,15 @@ class ProfilePage extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "Farmer ID: ${user.farmerId}",
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.green[700],
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
@@ -184,6 +193,49 @@ class ProfilePage extends StatelessWidget {
               color: Colors.grey[600],
             ),
           ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              if (!user.isPhoneVerified)
+                Chip(
+                  label: Text("Verify Phone"),
+                  backgroundColor: Colors.orange[50],
+                  labelStyle: TextStyle(
+                    color: Colors.orange[800],
+                    fontSize: 10,
+                  ),
+                ),
+              if (!user.isAadhaarVerified)
+                Chip(
+                  label: Text("Verify Aadhaar"),
+                  backgroundColor: Colors.orange[50],
+                  labelStyle: TextStyle(
+                    color: Colors.orange[800],
+                    fontSize: 10,
+                  ),
+                ),
+              if (user.farms.isEmpty)
+                Chip(
+                  label: Text("Add Farm"),
+                  backgroundColor: Colors.orange[50],
+                  labelStyle: TextStyle(
+                    color: Colors.orange[800],
+                    fontSize: 10,
+                  ),
+                ),
+              if (user.bankDetail == null)
+                Chip(
+                  label: Text("Add Bank"),
+                  backgroundColor: Colors.orange[50],
+                  labelStyle: TextStyle(
+                    color: Colors.orange[800],
+                    fontSize: 10,
+                  ),
+                ),
+            ],
+          ),
         ],
       ),
     );
@@ -228,15 +280,21 @@ class ProfilePage extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          _buildInfoRow("Aadhar Number", user.aadharNumber ?? "Not added"),
-          _buildInfoRow("Date of Birth", user.dateOfBirth ?? "Not added"),
+          _buildInfoRow("Farmer ID", user.farmerId),
+          _buildInfoRow("Aadhaar Number", user.aadharNumber ?? "Not added"),
           _buildInfoRow("Address", user.address ?? "Not added"),
+          _buildInfoRowWithVerification("Phone Verification",
+              user.isPhoneVerified ? "Verified" : "Not Verified",
+              isVerified: user.isPhoneVerified),
+          _buildInfoRowWithVerification("Aadhaar Verification",
+              user.isAadhaarVerified ? "Verified" : "Not Verified",
+              isVerified: user.isAadhaarVerified),
         ],
       ),
     );
   }
 
-  Widget _buildLandDetailsSection(BuildContext context) {
+  Widget _buildFarmDetailsSection(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -255,10 +313,10 @@ class ProfilePage extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.landscape_outlined, color: Colors.green),
+              Icon(Icons.agriculture_outlined, color: Colors.green),
               const SizedBox(width: 12),
               Text(
-                "Land Details",
+                "Farm Details",
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -267,30 +325,28 @@ class ProfilePage extends StatelessWidget {
               ),
               const Spacer(),
               IconButton(
-                icon: user.landDetails.isEmpty
+                icon: user.farms.isEmpty
                     ? Icon(Icons.add_circle_outline,
                         size: 20, color: Colors.green)
                     : Icon(Icons.edit, size: 20, color: Colors.green),
                 onPressed: () {
-                  _navigateToLandDetails(context);
+                  _navigateToFarmDetails(context);
                 },
               ),
             ],
           ),
           const SizedBox(height: 16),
-          if (user.landDetails.isEmpty)
+          if (user.farms.isEmpty)
             _buildEmptyState(
-              icon: Icons.landscape_outlined,
-              message: "No land details added",
-              buttonText: "Add Land Details",
+              icon: Icons.agriculture_outlined,
+              message: "No farm details added",
+              buttonText: "Add Farm Details",
               onPressed: () {
-                _navigateToLandDetails(context);
+                _navigateToFarmDetails(context);
               },
             )
           else
-            ...user.landDetails
-                .map((land) => _buildLandCard(land, context))
-                .toList(),
+            ...user.farms.map((farm) => _buildFarmCard(farm, context)).toList(),
         ],
       ),
     );
@@ -415,7 +471,7 @@ class ProfilePage extends StatelessWidget {
   }
 
   void _logout(BuildContext context) {
-    // TODO: BACKEND - Clear user session/token
+    // TODO: BACKEND - Clear user session/token from Firebase
     // TODO: BACKEND - Call logout API
 
     // Navigate to login page and remove all routes
@@ -426,8 +482,8 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  // Navigation to LandDetailsPage
-  void _navigateToLandDetails(BuildContext context) {
+  // Navigation to FarmDetailsPage
+  void _navigateToFarmDetails(BuildContext context) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -436,7 +492,6 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  // New method for Bank Details navigation
   void _navigateToBankDetails(BuildContext context) {
     Navigator.push(
       context,
@@ -446,10 +501,10 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildLandCard(LandDetail land, BuildContext context) {
+  Widget _buildFarmCard(FarmModel farm, BuildContext context) {
     return GestureDetector(
       onTap: () {
-        _navigateToLandDetails(context);
+        _navigateToFarmDetails(context);
       },
       child: Container(
         width: double.infinity,
@@ -468,7 +523,7 @@ class ProfilePage extends StatelessWidget {
                 Icon(Icons.numbers, size: 16, color: Colors.green),
                 const SizedBox(width: 8),
                 Text(
-                  "Survey No: ${land.surveyNumber}",
+                  "Farm ID: ${farm.farmId}",
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     color: Colors.green[800],
@@ -476,7 +531,7 @@ class ProfilePage extends StatelessWidget {
                 ),
                 const Spacer(),
                 Text(
-                  land.area,
+                  "${farm.area} acres",
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     color: Colors.green[800],
@@ -486,7 +541,7 @@ class ProfilePage extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              land.location,
+              farm.location,
               style: TextStyle(
                 color: Colors.grey[600],
                 fontSize: 12,
@@ -496,7 +551,7 @@ class ProfilePage extends StatelessWidget {
             Row(
               children: [
                 Chip(
-                  label: Text(land.soilType),
+                  label: Text(farm.cropType),
                   backgroundColor: Colors.orange[50],
                   labelStyle: TextStyle(
                     color: Colors.orange[800],
@@ -504,19 +559,15 @@ class ProfilePage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Wrap(
-                  spacing: 4,
-                  children: land.crops
-                      .map((crop) => Chip(
-                            label: Text(crop),
-                            backgroundColor: Colors.green[50],
-                            labelStyle: TextStyle(
-                              color: Colors.green[800],
-                              fontSize: 10,
-                            ),
-                          ))
-                      .toList(),
-                ),
+                if (farm.activeClaimId != null)
+                  Chip(
+                    label: Text("Active Claim"),
+                    backgroundColor: Colors.red[50],
+                    labelStyle: TextStyle(
+                      color: Colors.red[800],
+                      fontSize: 10,
+                    ),
+                  ),
               ],
             ),
           ],
@@ -540,7 +591,6 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  // Original _buildInfoRow method (without verification)
   Widget _buildInfoRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -574,7 +624,6 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  // New method for info rows with verification status
   Widget _buildInfoRowWithVerification(String label, String value,
       {bool isVerified = false}) {
     return Padding(
@@ -603,7 +652,7 @@ class ProfilePage extends StatelessWidget {
                         ? Colors.grey[400]
                         : isVerified
                             ? Colors.green
-                            : Colors.grey[600],
+                            : Colors.orange,
                     fontStyle: value == "Not added"
                         ? FontStyle.italic
                         : FontStyle.normal,

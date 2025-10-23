@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'login_page.dart';
 import '../dashboard/dashboard_page.dart';
+import '../../models/user_model.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -84,7 +85,7 @@ class _SignupPageState extends State<SignupPage> {
         _isCreatingAccount = true;
       });
 
-      // Prepare farmer data for database
+      // Prepare farmer data for blockchain and Firebase
       Map<String, dynamic> farmerData = {
         'firstName': _firstNameController.text,
         'lastName': _lastNameController.text,
@@ -104,7 +105,11 @@ class _SignupPageState extends State<SignupPage> {
   Future<void> _registerFarmer(Map<String, dynamic> farmerData) async {
     try {
       // TODO: BACKEND - Replace with actual API call
-      // Example API structure:
+      // This should:
+      // 1. Generate FarmerID (UUID) in backend
+      // 2. Store basic info in Blockchain (FarmerID, Name, FarmIDs array, Timestamp)
+      // 3. Store full profile in Firebase (FarmerID, Name, Phone, Email, Profile Pic, etc.)
+      // 4. Store verification status in Firebase
       /*
       final response = await http.post(
         Uri.parse('https://your-api.com/auth/register'),
@@ -114,7 +119,7 @@ class _SignupPageState extends State<SignupPage> {
       
       if (response.statusCode == 201) {
         final userData = json.decode(response.body);
-        // Save token to shared preferences
+        // Save token and FarmerID to shared preferences
         // Navigate to dashboard
         _navigateToDashboard();
       } else {
@@ -128,7 +133,7 @@ class _SignupPageState extends State<SignupPage> {
       await Future.delayed(Duration(seconds: 2));
 
       // BACKEND: Remove this simulation after API integration
-      // For now, simulate successful registration
+      // For now, simulate successful registration with FarmerID
       _navigateToDashboard();
     } catch (e) {
       // BACKEND: Handle API errors
@@ -177,7 +182,7 @@ class _SignupPageState extends State<SignupPage> {
       _isSendingPhoneOtp = true;
     });
 
-    // BACKEND: Send OTP API integration
+    // BACKEND: Send OTP API integration - Store temp data in Firebase
     try {
       // TODO: Replace with actual OTP API call
       /*
@@ -234,7 +239,7 @@ class _SignupPageState extends State<SignupPage> {
       _isVerifyingPhoneOtp = true;
     });
 
-    // BACKEND: Verify OTP API integration
+    // BACKEND: Verify OTP API integration - Update verification status in Firebase
     try {
       // TODO: Replace with actual OTP verification API call
       /*
@@ -293,7 +298,7 @@ class _SignupPageState extends State<SignupPage> {
       _isSendingAadhaarOtp = true;
     });
 
-    // BACKEND: Send Aadhaar OTP API integration
+    // BACKEND: Send Aadhaar OTP API integration - Store temp data in Firebase
     try {
       // TODO: Replace with actual Aadhaar OTP API call
       await Future.delayed(Duration(seconds: 2));
@@ -340,7 +345,7 @@ class _SignupPageState extends State<SignupPage> {
       _isVerifyingAadhaarOtp = true;
     });
 
-    // BACKEND: Verify Aadhaar OTP API integration
+    // BACKEND: Verify Aadhaar OTP API integration - Update verification status in Firebase
     try {
       // TODO: Replace with actual Aadhaar OTP verification API call
       await Future.delayed(Duration(seconds: 2));

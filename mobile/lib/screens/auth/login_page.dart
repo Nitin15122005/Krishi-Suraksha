@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'signup_page.dart';
-import '../dashboard/dashboard_page.dart'; // Add dashboard import
+import '../dashboard/dashboard_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -32,10 +32,9 @@ class _LoginPageState extends State<LoginPage> {
         _isLoading = true;
       });
 
-      // BACKEND: Login API integration
+      // BACKEND: Login API integration with FarmerID generation
       try {
         // TODO: Replace with actual API call
-        // Example API structure:
         /*
         final response = await http.post(
           Uri.parse('https://your-api.com/auth/login'),
@@ -48,6 +47,7 @@ class _LoginPageState extends State<LoginPage> {
         if (response.statusCode == 200) {
           final userData = json.decode(response.body);
           // Save token to shared preferences
+          // Save FarmerID to local storage
           // Navigate to dashboard
         } else {
           // Handle error
@@ -58,7 +58,7 @@ class _LoginPageState extends State<LoginPage> {
         await Future.delayed(Duration(seconds: 2));
 
         // BACKEND: Remove this simulation after API integration
-        // For now, simulate successful login
+        // For now, simulate successful login with FarmerID
         _navigateToDashboard();
       } catch (e) {
         // BACKEND: Handle API errors

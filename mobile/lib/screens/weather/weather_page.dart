@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_const_constructors, prefer_final_fields, sized_box_for_whitespace, curly_braces_in_flow_control_structures
+
 import 'package:flutter/material.dart';
 import '../map/map_selection_page.dart'; // ADD THIS IMPORT
 

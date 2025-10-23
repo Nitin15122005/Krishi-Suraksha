@@ -1,6 +1,8 @@
 // ignore_for_file: unused_local_variable, prefer_const_constructors
 
 import 'package:flutter/material.dart';
+import '../../models/user_model.dart';
+import '../map/map_selection_page.dart';
 
 class NewClaimPage extends StatefulWidget {
   const NewClaimPage({super.key});
@@ -11,6 +13,7 @@ class NewClaimPage extends StatefulWidget {
 
 class _NewClaimPageState extends State<NewClaimPage> {
   final _formKey = GlobalKey<FormState>();
+  final TextEditingController _farmIdController = TextEditingController();
   final TextEditingController _cropTypeController = TextEditingController();
   final TextEditingController _landAreaController = TextEditingController();
   final TextEditingController _damageDateController = TextEditingController();
@@ -21,9 +24,10 @@ class _NewClaimPageState extends State<NewClaimPage> {
   final TextEditingController _locationController = TextEditingController();
   final TextEditingController _surveyNumberController = TextEditingController();
 
-  List<String> _selectedEvidence = [];
+  final List<String> _selectedEvidence = [];
   bool _isSubmitting = false;
   DateTime? _selectedDate;
+  Map<String, dynamic>? _selectedLocation;
 
   // Dropdown options
   final List<String> _cropTypes = [
@@ -53,8 +57,29 @@ class _NewClaimPageState extends State<NewClaimPage> {
     'Other Natural Calamity'
   ];
 
+  // TODO: BACKEND - Replace with actual farmer's farms from API
+  final List<FarmModel> _farmerFarms = [
+    FarmModel(
+      farmId: "FARM_001",
+      ownerFarmerId: "FARMER_001",
+      location: "lat:19.0760,lon:72.8777",
+      cropType: "Wheat",
+      area: 5.2,
+      description: "Main wheat farm",
+    ),
+    FarmModel(
+      farmId: "FARM_002",
+      ownerFarmerId: "FARMER_001",
+      location: "lat:19.0760,lon:72.8777",
+      cropType: "Rice",
+      area: 3.5,
+      description: "Rice paddy field",
+    ),
+  ];
+
   @override
   void dispose() {
+    _farmIdController.dispose();
     _cropTypeController.dispose();
     _landAreaController.dispose();
     _damageDateController.dispose();
@@ -82,8 +107,26 @@ class _NewClaimPageState extends State<NewClaimPage> {
     }
   }
 
+  Future<void> _selectLocation() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const MapSelectionPage(
+          isFarmLocation: true,
+        ),
+      ),
+    );
+
+    if (result != null && mounted) {
+      setState(() {
+        _selectedLocation = result;
+        _locationController.text = result['address'];
+      });
+    }
+  }
+
   void _addEvidence() {
-    // TODO: Implement image picker or file upload
+    // TODO: Implement image picker and upload to Firebase Storage
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -93,21 +136,21 @@ class _NewClaimPageState extends State<NewClaimPage> {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              // TODO: Open camera
+              // TODO: Open camera and upload to Firebase Storage
             },
             child: Text("Camera"),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              // TODO: Open gallery
+              // TODO: Open gallery and upload to Firebase Storage
             },
             child: Text("Gallery"),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              // TODO: Add document
+              // TODO: Add document and upload to Firebase Storage
             },
             child: Text("Document"),
           ),
@@ -134,16 +177,26 @@ class _NewClaimPageState extends State<NewClaimPage> {
     // TODO: BACKEND - Submit claim data to API
     try {
       final claimData = {
+        'farmId': _farmIdController.text,
         'cropType': _cropTypeController.text,
-        'landArea': _landAreaController.text,
+        'landArea': double.tryParse(_landAreaController.text) ?? 0.0,
         'damageDate': _damageDateController.text,
         'damageType': _damageTypeController.text,
-        'estimatedLoss': _estimatedLossController.text,
+        'estimatedLoss': double.tryParse(_estimatedLossController.text) ?? 0.0,
         'description': _descriptionController.text,
         'location': _locationController.text,
         'surveyNumber': _surveyNumberController.text,
         'evidence': _selectedEvidence,
+        'farmerId': "FARMER_001", // TODO: Get from logged in user
+        'status': 'Pending',
+        'damagePercentage': 0.0, // Will be set by satellite analysis
+        'payoutAmount': 0.0, // Will be calculated
       };
+
+      // BACKEND: This should:
+      // 1. Generate ClaimID in backend
+      // 2. Store in Blockchain: ClaimID, FarmID, FarmerID, Reason, Status, DamagePercentage, PayoutAmount, SatelliteDataHash, AssignedAuditor, Timestamp
+      // 3. Store in Firebase: Full claim mirror, evidence images URLs, auditor notes, notifications
 
       // Simulate API call
       await Future.delayed(const Duration(seconds: 2));
@@ -171,7 +224,7 @@ class _NewClaimPageState extends State<NewClaimPage> {
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         title: Row(
-          children: [
+          children: const [
             Icon(Icons.check_circle, color: Colors.green),
             SizedBox(width: 8),
             Text("Claim Submitted"),
@@ -189,6 +242,11 @@ class _NewClaimPageState extends State<NewClaimPage> {
                 fontWeight: FontWeight.bold,
                 color: Colors.green,
               ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              "Satellite analysis will be processed automatically.",
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
             SizedBox(height: 8),
             Text(
@@ -249,6 +307,10 @@ class _NewClaimPageState extends State<NewClaimPage> {
               _buildHeaderSection(),
               const SizedBox(height: 30),
 
+              // Farm Selection
+              _buildFarmSelectionSection(),
+              const SizedBox(height: 25),
+
               // Crop Information
               _buildCropInformationSection(),
               const SizedBox(height: 25),
@@ -301,7 +363,7 @@ class _NewClaimPageState extends State<NewClaimPage> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  "Please provide accurate information. False claims may lead to rejection.",
+                  "Satellite analysis will automatically assess damage percentage after submission.",
                   style: TextStyle(
                     color: Colors.green[700],
                     fontSize: 12,
@@ -312,6 +374,29 @@ class _NewClaimPageState extends State<NewClaimPage> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildFarmSelectionSection() {
+    return _buildSection(
+      title: "Select Farm",
+      icon: Icons.agriculture,
+      children: [
+        _buildDropdownField(
+          controller: _farmIdController,
+          label: "Farm",
+          hintText: "Select your farm",
+          items: _farmerFarms
+              .map((farm) => "${farm.cropType} - ${farm.area} acres")
+              .toList(),
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please select a farm';
+            }
+            return null;
+          },
+        ),
+      ],
     );
   }
 
@@ -335,13 +420,16 @@ class _NewClaimPageState extends State<NewClaimPage> {
         const SizedBox(height: 16),
         _buildFormField(
           controller: _landAreaController,
-          label: "Land Area Affected",
-          hintText: "e.g., 2.5 acres, 1 hectare",
+          label: "Land Area Affected (acres)",
+          hintText: "e.g., 2.5",
           icon: Icons.square_foot,
           keyboardType: TextInputType.number,
           validator: (value) {
             if (value == null || value.isEmpty) {
               return 'Please enter land area';
+            }
+            if (double.tryParse(value) == null) {
+              return 'Please enter a valid number';
             }
             return null;
           },
@@ -395,13 +483,16 @@ class _NewClaimPageState extends State<NewClaimPage> {
         const SizedBox(height: 16),
         _buildFormField(
           controller: _estimatedLossController,
-          label: "Estimated Loss Amount",
-          hintText: "e.g., ₹15,000",
+          label: "Estimated Loss Amount (₹)",
+          hintText: "e.g., 15000",
           icon: Icons.currency_rupee,
           keyboardType: TextInputType.number,
           validator: (value) {
             if (value == null || value.isEmpty) {
               return 'Please enter estimated loss';
+            }
+            if (double.tryParse(value) == null) {
+              return 'Please enter a valid amount';
             }
             return null;
           },
@@ -434,13 +525,15 @@ class _NewClaimPageState extends State<NewClaimPage> {
       children: [
         _buildFormField(
           controller: _locationController,
-          label: "Farm Location",
-          hintText: "Enter complete farm address",
+          label: "Damage Location",
+          hintText: "Select location on map",
           icon: Icons.map,
           maxLines: 2,
+          readOnly: true,
+          onTap: _selectLocation,
           validator: (value) {
             if (value == null || value.isEmpty) {
-              return 'Please enter farm location';
+              return 'Please select damage location';
             }
             return null;
           },
@@ -455,7 +548,7 @@ class _NewClaimPageState extends State<NewClaimPage> {
       icon: Icons.attach_file,
       children: [
         Text(
-          "Add supporting evidence (photos, documents)",
+          "Add supporting evidence (photos, documents) - Will be stored in Firebase Storage",
           style: TextStyle(
             color: Colors.grey[600],
             fontSize: 14,
@@ -555,7 +648,7 @@ class _NewClaimPageState extends State<NewClaimPage> {
         ),
         const SizedBox(height: 8),
         Text(
-          "Supported: Photos (JPG, PNG), Documents (PDF)",
+          "Supported: Photos (JPG, PNG), Documents (PDF) - Stored in Firebase Storage",
           style: TextStyle(
             color: Colors.grey[500],
             fontSize: 12,
@@ -727,7 +820,7 @@ class _NewClaimPageState extends State<NewClaimPage> {
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: [
+                children: const [
                   SizedBox(
                     width: 20,
                     height: 20,
@@ -736,7 +829,7 @@ class _NewClaimPageState extends State<NewClaimPage> {
                       color: Colors.white,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   Text(
                     "Submitting Claim...",
                     style: TextStyle(

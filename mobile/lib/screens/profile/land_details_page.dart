@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import '../../models/user_model.dart';
+import '../map/map_selection_page.dart';
 
 class LandDetailsPage extends StatefulWidget {
   final UserModel user;
@@ -22,25 +23,44 @@ class _LandDetailsPageState extends State<LandDetailsPage> {
 
   List<String> _selectedCrops = [];
   bool _isEditing = false;
-  LandDetail? _editingLand;
+  FarmModel? _editingFarm;
+  Map<String, dynamic>? _selectedLocation;
 
   @override
   void initState() {
     super.initState();
-    // If user has land details, we can show them for editing
-    if (widget.user.landDetails.isNotEmpty) {
+    // If user has farm details, we can show them for editing
+    if (widget.user.farms.isNotEmpty) {
       _isEditing = true;
-      _editingLand = widget.user.landDetails.first;
-      _fillFormData(_editingLand!);
+      _editingFarm = widget.user.farms.first;
+      _fillFormData(_editingFarm!);
     }
   }
 
-  void _fillFormData(LandDetail land) {
-    _surveyNumberController.text = land.surveyNumber;
-    _areaController.text = land.area;
-    _locationController.text = land.location;
-    _soilTypeController.text = land.soilType;
-    _selectedCrops = List.from(land.crops);
+  void _fillFormData(FarmModel farm) {
+    _surveyNumberController.text = ""; // Survey number not in FarmModel
+    _areaController.text = farm.area.toString();
+    _locationController.text = farm.location;
+    _soilTypeController.text = ""; // Soil type not in FarmModel
+    _selectedCrops = [farm.cropType]; // Single crop type in FarmModel
+  }
+
+  Future<void> _selectLocation() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const MapSelectionPage(
+          isFarmLocation: true,
+        ),
+      ),
+    );
+
+    if (result != null && mounted) {
+      setState(() {
+        _selectedLocation = result;
+        _locationController.text = result['address'];
+      });
+    }
   }
 
   void _addCrop() {
@@ -59,18 +79,28 @@ class _LandDetailsPageState extends State<LandDetailsPage> {
     });
   }
 
-  void _saveLandDetails() {
+  void _saveFarmDetails() {
     if (_formKey.currentState!.validate() && _selectedCrops.isNotEmpty) {
-      final landDetail = LandDetail(
-        surveyNumber: _surveyNumberController.text.trim(),
-        area: _areaController.text.trim(),
-        location: _locationController.text.trim(),
-        soilType: _soilTypeController.text.trim(),
-        crops: _selectedCrops,
+      // TODO: BACKEND - Save farm details to blockchain and Firebase
+      // This should:
+      // 1. Generate FarmID in backend
+      // 2. Store in Blockchain: FarmID, OwnerFarmerID, Location, CropType, LandRecordHash, ActiveClaimID, Area, Timestamp
+      // 3. Store in Firebase: Full farm mirror, documents, images, historical records
+
+      final farmData = FarmModel(
+        farmId: _isEditing
+            ? _editingFarm!.farmId
+            : "FARM_${DateTime.now().millisecondsSinceEpoch}",
+        ownerFarmerId: widget.user.farmerId,
+        location: _selectedLocation != null
+            ? "lat:${_selectedLocation!['latitude']},lon:${_selectedLocation!['longitude']}"
+            : _locationController.text,
+        cropType: _selectedCrops.first, // Using first crop as main crop type
+        area: double.tryParse(_areaController.text) ?? 0.0,
+        description: "Farm description", // You might want to add this field
       );
 
-      // TODO: BACKEND - Save land details to backend
-      // For now, just navigate back
+      // Navigate back
       Navigator.pop(context);
     } else if (_selectedCrops.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -90,7 +120,7 @@ class _LandDetailsPageState extends State<LandDetailsPage> {
         backgroundColor: Colors.white,
         elevation: 0,
         title: Text(
-          _isEditing ? 'Edit Land Details' : 'Add Land Details',
+          _isEditing ? 'Edit Farm Details' : 'Add Farm Details',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -119,14 +149,11 @@ class _LandDetailsPageState extends State<LandDetailsPage> {
               // Survey Number
               _buildFormField(
                 controller: _surveyNumberController,
-                label: 'Survey Number',
+                label: 'Survey Number (Optional)',
                 hintText: 'Enter survey number',
                 icon: Icons.numbers,
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter survey number';
-                  }
-                  return null;
+                  return null; // Optional field
                 },
               ),
               const SizedBox(height: 20),
@@ -134,12 +161,16 @@ class _LandDetailsPageState extends State<LandDetailsPage> {
               // Area
               _buildFormField(
                 controller: _areaController,
-                label: 'Land Area',
-                hintText: 'e.g., 2.5 acres, 1 hectare',
+                label: 'Land Area (acres)',
+                hintText: 'e.g., 2.5',
                 icon: Icons.square_foot,
+                keyboardType: TextInputType.number,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter land area';
+                  }
+                  if (double.tryParse(value) == null) {
+                    return 'Please enter a valid number';
                   }
                   return null;
                 },
@@ -150,12 +181,14 @@ class _LandDetailsPageState extends State<LandDetailsPage> {
               _buildFormField(
                 controller: _locationController,
                 label: 'Location',
-                hintText: 'Enter land location/address',
+                hintText: 'Select farm location on map',
                 icon: Icons.location_on,
                 maxLines: 2,
+                readOnly: true,
+                onTap: _selectLocation,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter location';
+                    return 'Please select farm location';
                   }
                   return null;
                 },
@@ -165,14 +198,11 @@ class _LandDetailsPageState extends State<LandDetailsPage> {
               // Soil Type
               _buildFormField(
                 controller: _soilTypeController,
-                label: 'Soil Type',
+                label: 'Soil Type (Optional)',
                 hintText: 'e.g., Black soil, Red soil, Loamy',
                 icon: Icons.landscape,
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter soil type';
-                  }
-                  return null;
+                  return null; // Optional field
                 },
               ),
               const SizedBox(height: 20),
@@ -186,7 +216,7 @@ class _LandDetailsPageState extends State<LandDetailsPage> {
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: _saveLandDetails,
+                  onPressed: _saveFarmDetails,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
                     shape: RoundedRectangleBorder(
@@ -194,7 +224,7 @@ class _LandDetailsPageState extends State<LandDetailsPage> {
                     ),
                   ),
                   child: Text(
-                    _isEditing ? 'Update Land Details' : 'Save Land Details',
+                    _isEditing ? 'Update Farm Details' : 'Save Farm Details',
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -217,6 +247,9 @@ class _LandDetailsPageState extends State<LandDetailsPage> {
     required IconData icon,
     required String? Function(String?) validator,
     int maxLines = 1,
+    bool readOnly = false,
+    VoidCallback? onTap,
+    TextInputType keyboardType = TextInputType.text,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -245,6 +278,9 @@ class _LandDetailsPageState extends State<LandDetailsPage> {
           child: TextFormField(
             controller: controller,
             maxLines: maxLines,
+            readOnly: readOnly,
+            onTap: onTap,
+            keyboardType: keyboardType,
             decoration: InputDecoration(
               hintText: hintText,
               border: InputBorder.none,
@@ -266,7 +302,7 @@ class _LandDetailsPageState extends State<LandDetailsPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Crops Grown',
+          'Main Crop Type',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,
@@ -297,7 +333,7 @@ class _LandDetailsPageState extends State<LandDetailsPage> {
                       child: TextFormField(
                         controller: _cropsController,
                         decoration: InputDecoration(
-                          hintText: 'Enter crop name',
+                          hintText: 'Enter main crop type',
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -333,7 +369,7 @@ class _LandDetailsPageState extends State<LandDetailsPage> {
                   const Divider(),
                   const SizedBox(height: 8),
                   Text(
-                    'Selected Crops:',
+                    'Selected Crop:',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
@@ -361,7 +397,7 @@ class _LandDetailsPageState extends State<LandDetailsPage> {
                   const Divider(),
                   const SizedBox(height: 8),
                   Text(
-                    'No crops added yet',
+                    'No crop added yet',
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey[500],
@@ -382,9 +418,9 @@ class _LandDetailsPageState extends State<LandDetailsPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text("Delete Land Details"),
+          title: const Text("Delete Farm Details"),
           content:
-              const Text("Are you sure you want to delete these land details?"),
+              const Text("Are you sure you want to delete these farm details?"),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -393,7 +429,7 @@ class _LandDetailsPageState extends State<LandDetailsPage> {
             TextButton(
               onPressed: () {
                 Navigator.pop(context);
-                _deleteLandDetails();
+                _deleteFarmDetails();
               },
               child: const Text(
                 "Delete",
@@ -406,8 +442,8 @@ class _LandDetailsPageState extends State<LandDetailsPage> {
     );
   }
 
-  void _deleteLandDetails() {
-    // TODO: BACKEND - Delete land details from backend
+  void _deleteFarmDetails() {
+    // TODO: BACKEND - Delete farm details from blockchain and Firebase
     Navigator.pop(context);
   }
 

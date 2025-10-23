@@ -522,11 +522,11 @@ class DashboardPage extends StatelessWidget {
             } else if (index == 3) {
               // Profile tab
               final demoUser = UserModel(
-                id: "1",
                 name: "John Farmer",
                 email: "john.farmer@email.com",
                 phoneNumber: "+91 9876543210",
                 profileImage: null,
+                farmerId: '',
               );
               Navigator.push(
                 context,

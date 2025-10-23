@@ -1,4 +1,7 @@
+// ignore_for_file: prefer_const_constructors, duplicate_ignore
+
 import 'package:flutter/material.dart';
+import '../../models/user_model.dart';
 
 class ClaimsListPage extends StatelessWidget {
   final String status;
@@ -10,65 +13,78 @@ class ClaimsListPage extends StatelessWidget {
     required this.statusColor,
   });
 
-  // TODO: BACKEND - Replace with actual API data
-  List<Map<String, dynamic>> _getClaimsData() {
+  // TODO: BACKEND - Replace with actual API data from blockchain and Firebase
+  List<ClaimModel> _getClaimsData() {
     switch (status) {
       case 'pending':
         return [
-          {
-            'id': 'CLM-001',
-            'title': 'Wheat Harvest Loss',
-            'date': 'Dec 10, 2024',
-            'amount': '₹8,200',
-            'crop': 'Wheat',
-            'description': 'Heavy rainfall caused harvest loss',
-          },
-          {
-            'id': 'CLM-002',
-            'title': 'Corn Pest Attack',
-            'date': 'Dec 05, 2024',
-            'amount': '₹12,500',
-            'crop': 'Corn',
-            'description': 'Pest infestation in corn field',
-          },
-          {
-            'id': 'CLM-003',
-            'title': 'Rice Flood Damage',
-            'date': 'Nov 28, 2024',
-            'amount': '₹15,000',
-            'crop': 'Rice',
-            'description': 'Flood damage to rice plantation',
-          },
+          ClaimModel(
+            claimId: 'CLM-001',
+            farmId: 'FARM_001',
+            farmerId: 'FARMER_001',
+            reason: 'Heavy rainfall caused harvest loss',
+            status: 'Pending',
+            damagePercentage: 0.0, // Will be set by satellite analysis
+            payoutAmount: 0.0, // Will be calculated
+          ),
+          ClaimModel(
+            claimId: 'CLM-002',
+            farmId: 'FARM_002',
+            farmerId: 'FARMER_001',
+            reason: 'Pest infestation in corn field',
+            status: 'Pending',
+            damagePercentage: 0.0,
+            payoutAmount: 0.0,
+          ),
         ];
       case 'approved':
         return [
-          {
-            'id': 'CLM-004',
-            'title': 'Corn Crop Damage',
-            'date': 'Dec 15, 2024',
-            'amount': '₹12,500',
-            'crop': 'Corn',
-            'description': 'Storm damage to corn crops',
-          },
-          {
-            'id': 'CLM-005',
-            'title': 'Soybean Disease',
-            'date': 'Nov 20, 2024',
-            'amount': '₹9,800',
-            'crop': 'Soybean',
-            'description': 'Fungal disease outbreak',
-          },
+          ClaimModel(
+            claimId: 'CLM-004',
+            farmId: 'FARM_001',
+            farmerId: 'FARMER_001',
+            reason: 'Storm damage to corn crops',
+            status: 'Approved',
+            damagePercentage: 65.3, // From satellite analysis
+            payoutAmount: 12500.0,
+            satelliteDataHash: 'abc123hash',
+          ),
+          ClaimModel(
+            claimId: 'CLM-005',
+            farmId: 'FARM_002',
+            farmerId: 'FARMER_001',
+            reason: 'Fungal disease outbreak',
+            status: 'Approved',
+            damagePercentage: 45.2,
+            payoutAmount: 9800.0,
+            satelliteDataHash: 'def456hash',
+          ),
         ];
       case 'rejected':
         return [
-          {
-            'id': 'CLM-006',
-            'title': 'Soil Erosion',
-            'date': 'Nov 15, 2024',
-            'amount': '₹15,000',
-            'crop': 'Multiple',
-            'description': 'Soil erosion due to heavy winds',
-          },
+          ClaimModel(
+            claimId: 'CLM-006',
+            farmId: 'FARM_001',
+            farmerId: 'FARMER_001',
+            reason: 'Soil erosion due to heavy winds',
+            status: 'Rejected',
+            damagePercentage: 15.0,
+            payoutAmount: 0.0,
+            rejectionReason: 'Damage percentage below threshold',
+          ),
+        ];
+      case 'human_review':
+        return [
+          ClaimModel(
+            claimId: 'CLM-007',
+            farmId: 'FARM_001',
+            farmerId: 'FARMER_001',
+            reason: 'Unusual weather pattern damage',
+            status: 'Human_Review',
+            damagePercentage: 55.0,
+            payoutAmount: 0.0,
+            assignedAuditor: 'AUDITOR_001',
+          ),
         ];
       default:
         return [];
@@ -83,6 +99,8 @@ class ClaimsListPage extends StatelessWidget {
         return 'Approved Claims';
       case 'rejected':
         return 'Rejected Claims';
+      case 'human_review':
+        return 'Under Review';
       case 'all':
         return 'All Claims';
       default:
@@ -167,7 +185,7 @@ class ClaimsListPage extends StatelessWidget {
 }
 
 class _ClaimCard extends StatelessWidget {
-  final Map<String, dynamic> claim;
+  final ClaimModel claim;
   final String status;
   final Color statusColor;
   final VoidCallback onTap;
@@ -220,7 +238,7 @@ class _ClaimCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        claim['title'],
+                        "Claim ${claim.claimId}",
                         style: const TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 16,
@@ -228,7 +246,7 @@ class _ClaimCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Crop: ${claim['crop']}',
+                        'Farm: ${claim.farmId}',
                         style: TextStyle(
                           color: Colors.grey[600],
                           fontSize: 12,
@@ -247,7 +265,7 @@ class _ClaimCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    status.toUpperCase(),
+                    _getStatusText(claim.status),
                     style: TextStyle(
                       color: statusColor,
                       fontSize: 10,
@@ -259,13 +277,65 @@ class _ClaimCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              claim['description'],
+              claim.reason,
               style: TextStyle(
                 color: Colors.grey[600],
                 fontSize: 14,
               ),
             ),
             const SizedBox(height: 12),
+            if (claim.damagePercentage > 0) ...[
+              Row(
+                children: [
+                  Icon(Icons.satellite_alt, size: 14, color: Colors.blue),
+                  SizedBox(width: 4),
+                  Text(
+                    'Damage: ${claim.damagePercentage}%',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.blue[700],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 8),
+            ],
+            if (claim.payoutAmount > 0) ...[
+              Row(
+                children: [
+                  Icon(Icons.currency_rupee, size: 14, color: Colors.green),
+                  SizedBox(width: 4),
+                  Text(
+                    'Payout: ₹${claim.payoutAmount}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.green[700],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 8),
+            ],
+            if (claim.assignedAuditor != null) ...[
+              Row(
+                children: [
+                  Icon(Icons.person, size: 14, color: Colors.orange),
+                  SizedBox(width: 4),
+                  Text(
+                    'Auditor: ${claim.assignedAuditor}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.orange[700],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+              // ignore: prefer_const_constructors
+              SizedBox(height: 8),
+            ],
             Divider(color: Colors.grey[200]),
             const SizedBox(height: 8),
             Row(
@@ -282,7 +352,7 @@ class _ClaimCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      claim['id'],
+                      claim.claimId,
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 12,
@@ -301,7 +371,9 @@ class _ClaimCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      claim['date'],
+                      claim.createdAt != null
+                          ? '${claim.createdAt!.day}/${claim.createdAt!.month}/${claim.createdAt!.year}'
+                          : 'N/A',
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 12,
@@ -320,11 +392,15 @@ class _ClaimCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      claim['amount'],
-                      style: const TextStyle(
+                      claim.payoutAmount > 0
+                          ? '₹${claim.payoutAmount}'
+                          : 'Pending',
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
-                        color: Colors.green,
+                        color: claim.payoutAmount > 0
+                            ? Colors.green
+                            : Colors.orange,
                       ),
                     ),
                   ],
@@ -335,5 +411,20 @@ class _ClaimCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _getStatusText(String status) {
+    switch (status) {
+      case 'Pending':
+        return 'PENDING';
+      case 'Approved':
+        return 'APPROVED';
+      case 'Rejected':
+        return 'REJECTED';
+      case 'Human_Review':
+        return 'UNDER REVIEW';
+      default:
+        return status.toUpperCase();
+    }
   }
 }

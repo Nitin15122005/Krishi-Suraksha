@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import '../weather/weather_page.dart';
 import '../crop_scan/crop_scan_page.dart';
+import '../../models/user_model.dart';
 
 class AnalyticsPage extends StatefulWidget {
   const AnalyticsPage({super.key});
@@ -13,16 +14,17 @@ class AnalyticsPage extends StatefulWidget {
 
 class _AnalyticsPageState extends State<AnalyticsPage> {
   // TODO: BACKEND - Replace with actual API data from satellite/database
+  // This data should come from Firebase (satellite data, processed outputs) and Blockchain (damage percentages)
   final Map<String, dynamic> _cropData = {
     'cropName': 'Wheat',
     'cropHealth': 0.82,
     'growthStage': 'Flowering',
     'plantingDate': '2024-10-15',
     'expectedHarvest': '2025-03-20',
-    'totalArea': '5.2 acres',
+    'totalArea': 5.2, // Changed to double
     'soilHealth': 0.75,
-    'ndviIndex': 0.68,
-    'ndwiIndex': 0.45,
+    'ndviIndex': 0.68, // From satellite data
+    'ndwiIndex': 0.45, // From satellite data
     'temperature': 28.5,
     'humidity': 65.0,
     'rainfall': 120.0,
@@ -30,6 +32,8 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     'diseaseRisk': 'Medium',
     'nutrientStatus': 'Optimal',
     'yieldPrediction': '3.2 tons/acre',
+    'damagePercentage': 12.5, // From blockchain claims data
+    'satelliteDataHash': 'abc123satellitehash', // From blockchain
   };
 
   final List<Map<String, dynamic>> _healthMetrics = [
@@ -81,7 +85,32 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
       'message': 'Soil moisture levels optimal',
       'time': '2 days ago'
     },
+    {
+      'type': 'satellite',
+      'title': 'Satellite Analysis Complete',
+      'message': 'Latest NDVI data processed successfully',
+      'time': '3 hours ago'
+    },
   ];
+
+  // TODO: BACKEND - Add methods to fetch satellite data from Firebase and damage data from Blockchain
+  void _fetchSatelliteData() {
+    // This should fetch from:
+    // - Firebase: Raw satellite data, processed outputs, historical data
+    // - Blockchain: Damage percentages, satellite data hashes
+  }
+
+  void _fetchCropHealthData() {
+    // This should fetch from Firebase: AI interpretations, health metrics
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Fetch initial data
+    _fetchSatelliteData();
+    _fetchCropHealthData();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -400,7 +429,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${_cropData['totalArea']} • ${_cropData['growthStage']}',
+                      '${_cropData['totalArea']} acres • ${_cropData['growthStage']}',
                       style: TextStyle(
                         color: Colors.grey[600],
                         fontSize: 14,
@@ -431,9 +460,12 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
               ),
               Expanded(
                 child: _OverviewItem(
-                  label: 'Yield Prediction',
-                  value: _cropData['yieldPrediction'],
-                  icon: Icons.analytics,
+                  label: 'Damage %',
+                  value: '${_cropData['damagePercentage']}%',
+                  icon: Icons.warning,
+                  color: _cropData['damagePercentage'] > 10
+                      ? Colors.orange
+                      : Colors.green,
                 ),
               ),
             ],
@@ -530,6 +562,16 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
             ],
           ),
           const SizedBox(height: 16),
+          Text(
+            'Data Hash: ${_cropData['satelliteDataHash']}',
+            style: TextStyle(
+              fontSize: 10,
+              color: Colors.grey[500],
+              fontFamily: 'Monospace',
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 8),
           SizedBox(
             height: 200,
             child: Row(
@@ -845,10 +887,13 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
   }
 
   void _refreshData() {
-    // TODO: BACKEND - Refresh data from API
+    // TODO: BACKEND - Refresh data from API (Firebase and Blockchain)
+    _fetchSatelliteData();
+    _fetchCropHealthData();
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Refreshing crop data...'),
+        content: Text('Refreshing satellite and crop data...'),
         backgroundColor: Colors.green,
       ),
     );
@@ -859,25 +904,27 @@ class _OverviewItem extends StatelessWidget {
   final String label;
   final String value;
   final IconData icon;
+  final Color? color;
 
   const _OverviewItem({
     required this.label,
     required this.value,
     required this.icon,
+    this.color,
   });
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Icon(icon, color: Colors.green, size: 20),
+        Icon(icon, color: color ?? Colors.green, size: 20),
         const SizedBox(height: 4),
         Text(
           value,
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: Colors.grey[800],
+            color: color ?? Colors.grey[800],
           ),
           textAlign: TextAlign.center,
         ),
@@ -1185,13 +1232,17 @@ class _AlertCard extends StatelessWidget {
         ? Colors.orange
         : alert['type'] == 'success'
             ? Colors.green
-            : Colors.blue;
+            : alert['type'] == 'satellite'
+                ? Colors.blue
+                : Colors.blue;
 
     IconData icon = alert['type'] == 'warning'
         ? Icons.warning_amber
         : alert['type'] == 'success'
             ? Icons.check_circle
-            : Icons.info;
+            : alert['type'] == 'satellite'
+                ? Icons.satellite_alt
+                : Icons.info;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),

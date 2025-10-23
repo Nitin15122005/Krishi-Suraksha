@@ -31,11 +31,32 @@ class MyApp extends StatelessWidget {
         '/profile': (context) {
           // For demo purposes - in real app, you'd get user from auth state
           final demoUser = UserModel(
-            id: "1",
+            farmerId: "FARMER_001", // Updated to farmerId
             name: "John Farmer",
             email: "john.farmer@email.com",
             phoneNumber: "+91 9876543210",
             profileImage: null,
+            isPhoneVerified: true,
+            isAadhaarVerified: true,
+            address: "Farm Address, Village, State",
+            aadharNumber: "123456789012",
+            farms: [
+              FarmModel(
+                farmId: "FARM_001",
+                ownerFarmerId: "FARMER_001",
+                location: "lat:19.0760,lon:72.8777",
+                cropType: "Wheat",
+                area: 5.2,
+                description: "Main wheat farm",
+              ),
+            ],
+            bankDetail: BankDetail(
+              accountHolderName: "John Farmer",
+              accountNumber: "12345678901",
+              ifscCode: "SBIN0000123",
+              bankName: "State Bank of India",
+              branch: "Main Branch",
+            ),
           );
           return ProfilePage(user: demoUser);
         },
