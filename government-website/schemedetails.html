@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scheme Details - Government Portal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-beige-50 min-h-screen">
+
+  <!-- Header -->
+  <div id="headerContainer"></div>
+
+  <main class="p-6 max-w-7xl mx-auto">
+    <!-- Loading State -->
+    <div id="loadingState" class="text-center py-12">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
+      <p class="text-gray-600 mt-4">Loading scheme details...</p>
+    </div>
+
+    <!-- Error State -->
+    <div id="errorState" class="hidden text-center py-12">
+      <div class="text-brown-400 text-6xl mb-4">⚠️</div>
+      <h3 class="text-xl font-semibold text-gray-900 mb-2">Failed to Load Scheme</h3>
+      <p id="errorMessage" class="text-gray-600 mb-6">Please check the scheme ID and try again.</p>
+      <a href="dashboard.html" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors">
+        Back to Dashboard
+      </a>
+    </div>
+
+    <!-- Scheme Content -->
+    <div id="schemeContent" class="hidden">
+      <!-- Header Section -->
+      <div class="mb-8">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <div class="flex items-center gap-3 mb-2">
+              <span id="schemeIcon" class="text-4xl">🏛️</span>
+              <div>
+                <h1 id="schemeName" class="text-3xl font-bold text-gray-900">Scheme Name</h1>
+                <p id="schemeCode" class="text-gray-700">Scheme Code</p>
+              </div>
+            </div>
+            <p id="schemeDescription" class="text-gray-700 max-w-3xl">Scheme description will appear here.</p>
+          </div>
+          <div class="flex gap-3">
+            <button id="refreshBtn" class="bg-white border border-beige-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-beige-50 transition-colors flex items-center gap-2">
+              <span>🔄</span> Refresh
+            </button>
+            <a href="dashboard.html" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
+              <span>←</span> Back
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Stats -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-xl shadow-sm border border-beige-200 p-6 text-center">
+          <div id="totalClaims" class="text-2xl font-bold text-gray-900">0</div>
+          <div class="text-sm text-gray-700 mt-1">Total Claims</div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-beige-200 p-6 text-center">
+          <div id="pendingClaims" class="text-2xl font-bold text-amber-600">0</div>
+          <div class="text-sm text-gray-700 mt-1">Pending Review</div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-beige-200 p-6 text-center">
+          <div id="approvedClaims" class="text-2xl font-bold text-green-600">0</div>
+          <div class="text-sm text-gray-700 mt-1">Approved</div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-beige-200 p-6 text-center">
+          <div id="rejectedClaims" class="text-2xl font-bold text-brown-600">0</div>
+          <div class="text-sm text-gray-700 mt-1">Rejected</div>
+        </div>
+      </div>
+
+      <!-- Claims Section -->
+      <div class="bg-white rounded-xl shadow-sm border border-beige-200">
+        <div class="p-6 border-b border-beige-200">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h2 class="text-xl font-semibold text-gray-800">Flagged Claims</h2>
+              <p class="text-gray-700 mt-1">Review and manage flagged claims for this scheme</p>
+            </div>
+            <div class="flex gap-3">
+              <select id="statusFilter" class="border border-beige-300 rounded-lg px-3 py-2 text-sm">
+                <option value="all">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+              </select>
+              <input type="text" id="searchInput" placeholder="Search claims..." class="border border-beige-300 rounded-lg px-3 py-2 text-sm w-48">
+            </div>
+          </div>
+        </div>
+        
+        <div class="p-6">
+          <div id="claimsContainer">
+            <!-- Claims will be dynamically loaded here -->
+            <div class="text-center py-8">
+              <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+              <p class="text-gray-600 mt-2">Loading claims...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Claim Details Modal -->
+  <div id="claimModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white rounded-xl shadow-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div class="p-6 border-b border-beige-200">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xl font-semibold text-gray-900">Claim Details</h3>
+          <button id="closeModal" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+        </div>
+      </div>
+      <div id="modalContent" class="p-6">
+        <!-- Modal content will be loaded here -->
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { loadHeader } from './assets/js/header.js';
+    import { requireLogin, db } from './assets/js/firebase.js';
+    import { doc, getDoc, collection, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+    console.log("🏛️ Scheme Details Page Started");
+
+    let currentSchemeId = null;
+    let allClaims = [];
+
+    // Wait for authentication and load header
+    document.addEventListener('DOMContentLoaded', async () => {
+      console.log("📄 DOM Loaded");
+      
+      try {
+        await requireLogin();
+        console.log("✅ User authenticated");
+        loadHeader('headerContainer');
+        
+        // Get scheme ID from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        currentSchemeId = urlParams.get('id');
+        
+        if (!currentSchemeId) {
+          throw new Error('No scheme ID provided in URL');
+        }
+        
+        console.log(`🏛️ Loading details for scheme: ${currentSchemeId}`);
+        await loadSchemeDetails();
+        
+      } catch (error) {
+        console.error("❌ Initialization error:", error);
+        showError(error.message);
+      }
+    });
+
+    async function loadSchemeDetails() {
+      console.log(`📋 Loading details for scheme: ${currentSchemeId}`);
+      
+      try {
+        // Load scheme information
+        const schemeDoc = await getDoc(doc(db, "schemes", currentSchemeId));
+        
+        if (!schemeDoc.exists()) {
+          throw new Error(`Scheme '${currentSchemeId}' not found in database`);
+        }
+        
+        const scheme = schemeDoc.data();
+        console.log("🏛️ Scheme data:", scheme);
+        
+        // Update UI with scheme information
+        document.getElementById('schemeName').textContent = scheme.name || 'Unnamed Scheme';
+        document.getElementById('schemeCode').textContent = scheme.code || currentSchemeId;
+        document.getElementById('schemeDescription').textContent = scheme.description || 'No description available.';
+        document.getElementById('schemeIcon').textContent = scheme.icon || '🏛️';
+        
+        // Load claims for this scheme
+        await loadSchemeClaims();
+        
+        // Show content and hide loading
+        document.getElementById('loadingState').classList.add('hidden');
+        document.getElementById('schemeContent').classList.remove('hidden');
+        
+        console.log("✅ Scheme details loaded successfully");
+        
+      } catch (error) {
+        console.error("❌ Error loading scheme details:", error);
+        showError(error.message);
+      }
+    }
+
+    async function loadSchemeClaims() {
+      console.log(`📋 Loading claims for scheme: ${currentSchemeId}`);
+      
+      try {
+        const claimsRef = collection(db, "flaggedClaims");
+        const snapshot = await getDocs(claimsRef);
+        
+        // Filter claims for current scheme
+        allClaims = snapshot.docs
+          .map(doc => ({ id: doc.id, ...doc.data() }))
+          .filter(claim => claim.scheme === currentSchemeId);
+        
+        console.log(`📋 Found ${allClaims.length} claims for scheme ${currentSchemeId}`);
+        
+        updateQuickStats();
+        renderClaims(allClaims);
+        
+      } catch (error) {
+        console.error("❌ Error loading claims:", error);
+        throw error;
+      }
+    }
+
+    function updateQuickStats() {
+      const totalClaims = allClaims.length;
+      const pendingClaims = allClaims.filter(claim => !claim.status || claim.status === 'Pending' || claim.status === 'Under Review').length;
+      const approvedClaims = allClaims.filter(claim => claim.status === 'Approved').length;
+      const rejectedClaims = allClaims.filter(claim => claim.status === 'Rejected').length;
+
+      document.getElementById('totalClaims').textContent = totalClaims;
+      document.getElementById('pendingClaims').textContent = pendingClaims;
+      document.getElementById('approvedClaims').textContent = approvedClaims;
+      document.getElementById('rejectedClaims').textContent = rejectedClaims;
+
+      console.log("📊 Quick stats updated:", { totalClaims, pendingClaims, approvedClaims, rejectedClaims });
+    }
+
+    function renderClaims(claims) {
+      const container = document.getElementById('claimsContainer');
+      
+      if (claims.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-12">
+            <div class="text-gray-400 text-6xl mb-4">📋</div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">No Claims Found</h3>
+            <p class="text-gray-600">No flagged claims found for this scheme.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead>
+              <tr class="border-b border-beige-200">
+                <th class="text-left py-3 px-4 text-sm font-medium text-gray-700">Claim ID</th>
+                <th class="text-left py-3 px-4 text-sm font-medium text-gray-700">Farmer Name</th>
+                <th class="text-left py-3 px-4 text-sm font-medium text-gray-700">Status</th>
+                <th class="text-left py-3 px-4 text-sm font-medium text-gray-700">Date Flagged</th>
+                <th class="text-left py-3 px-4 text-sm font-medium text-gray-700">Risk Score</th>
+                <th class="text-left py-3 px-4 text-sm font-medium text-gray-700">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="claimsTableBody">
+              ${claims.map(claim => `
+                <tr class="border-b border-beige-100 hover:bg-beige-50 transition-colors">
+                  <td class="py-3 px-4 text-sm text-gray-900 font-mono">${claim.claimId || claim.id}</td>
+                  <td class="py-3 px-4 text-sm text-gray-700">${claim.farmerName || 'Unknown Farmer'}</td>
+                  <td class="py-3 px-4">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusClass(claim.status)}">
+                      ${claim.status || 'Pending'}
+                    </span>
+                  </td>
+                  <td class="py-3 px-4 text-sm text-gray-700">${formatDate(claim.timestamp)}</td>
+                  <td class="py-3 px-4">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRiskClass(claim.riskScore)}">
+                      ${claim.riskScore || 'N/A'}
+                    </span>
+                  </td>
+                  <td class="py-3 px-4">
+                    <button onclick="openClaimDetails('${claim.id}')" class="text-green-600 hover:text-green-700 text-sm font-medium">
+                      View Details
+                    </button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      // Add event listeners for filters
+      document.getElementById('statusFilter').addEventListener('change', filterClaims);
+      document.getElementById('searchInput').addEventListener('input', filterClaims);
+      document.getElementById('refreshBtn').addEventListener('click', refreshData);
+      document.getElementById('closeModal').addEventListener('click', closeModal);
+    }
+
+    function filterClaims() {
+      const statusFilter = document.getElementById('statusFilter').value;
+      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+      
+      let filteredClaims = allClaims;
+      
+      // Apply status filter
+      if (statusFilter !== 'all') {
+        filteredClaims = filteredClaims.filter(claim => {
+          const status = (claim.status || 'pending').toLowerCase();
+          return status === statusFilter;
+        });
+      }
+      
+      // Apply search filter
+      if (searchTerm) {
+        filteredClaims = filteredClaims.filter(claim => 
+          (claim.farmerName || '').toLowerCase().includes(searchTerm) ||
+          (claim.claimId || '').toLowerCase().includes(searchTerm)
+        );
+      }
+      
+      renderClaims(filteredClaims);
+    }
+
+    async function refreshData() {
+      console.log("🔄 Refreshing data...");
+      document.getElementById('refreshBtn').disabled = true;
+      
+      try {
+        await loadSchemeClaims();
+        console.log("✅ Data refreshed successfully");
+      } catch (error) {
+        console.error("❌ Error refreshing data:", error);
+        showError("Failed to refresh data");
+      } finally {
+        document.getElementById('refreshBtn').disabled = false;
+      }
+    }
+
+    async function openClaimDetails(claimId) {
+      console.log(`📄 Opening claim details: ${claimId}`);
+      
+      try {
+        const claimDoc = await getDoc(doc(db, "flaggedClaims", claimId));
+        
+        if (!claimDoc.exists()) {
+          throw new Error('Claim not found');
+        }
+        
+        const claim = claimDoc.data();
+        const modalContent = document.getElementById('modalContent');
+        
+        modalContent.innerHTML = `
+          <div class="space-y-6">
+            <!-- Claim Header -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h4 class="font-semibold text-gray-900 mb-2">Claim Information</h4>
+                <div class="space-y-2 text-sm">
+                  <div class="flex justify-between">
+                    <span class="text-gray-600">Claim ID:</span>
+                    <span class="font-medium">${claim.claimId || claimId}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-gray-600">Scheme:</span>
+                    <span class="font-medium">${claim.scheme || currentSchemeId}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-gray-600">Status:</span>
+                    <span class="font-medium ${getStatusTextClass(claim.status)}">${claim.status || 'Pending'}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <h4 class="font-semibold text-gray-900 mb-2">Farmer Information</h4>
+                <div class="space-y-2 text-sm">
+                  <div class="flex justify-between">
+                    <span class="text-gray-600">Name:</span>
+                    <span class="font-medium">${claim.farmerName || 'Unknown'}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-gray-600">ID:</span>
+                    <span class="font-medium">${claim.farmerId || 'N/A'}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-gray-600">Location:</span>
+                    <span class="font-medium">${claim.location || 'N/A'}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Risk Assessment -->
+            <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <h4 class="font-semibold text-amber-900 mb-2">Risk Assessment</h4>
+              <div class="flex items-center gap-4">
+                <div class="text-2xl font-bold ${getRiskTextClass(claim.riskScore)}">
+                  ${claim.riskScore || 'N/A'}
+                </div>
+                <div class="text-sm text-amber-700">
+                  ${getRiskDescription(claim.riskScore)}
+                </div>
+              </div>
+              ${claim.riskFactors ? `
+                <div class="mt-3">
+                  <p class="text-sm font-medium text-amber-800 mb-1">Risk Factors:</p>
+                  <ul class="text-sm text-amber-700 list-disc list-inside">
+                    ${claim.riskFactors.map(factor => `<li>${factor}</li>`).join('')}
+                  </ul>
+                </div>
+              ` : ''}
+            </div>
+
+            <!-- Claim Details -->
+            <div>
+              <h4 class="font-semibold text-gray-900 mb-3">Claim Details</h4>
+              <div class="bg-beige-50 rounded-lg border border-beige-200 p-4">
+                <pre class="text-sm text-gray-700 whitespace-pre-wrap">${JSON.stringify(claim, null, 2)}</pre>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex gap-3 pt-4 border-t border-beige-200">
+              <button onclick="updateClaimStatus('${claimId}', 'Approved')" class="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors">
+                Approve Claim
+              </button>
+              <button onclick="updateClaimStatus('${claimId}', 'Rejected')" class="flex-1 bg-brown-600 text-white py-2 px-4 rounded-lg hover:bg-brown-700 transition-colors">
+                Reject Claim
+              </button>
+              <button onclick="closeModal()" class="flex-1 bg-gray-500 text-white py-2 px-4 rounded-lg hover:bg-gray-600 transition-colors">
+                Close
+              </button>
+            </div>
+          </div>
+        `;
+        
+        document.getElementById('claimModal').classList.remove('hidden');
+        
+      } catch (error) {
+        console.error("❌ Error loading claim details:", error);
+        alert('Failed to load claim details: ' + error.message);
+      }
+    }
+
+    async function updateClaimStatus(claimId, status) {
+      console.log(`🔄 Updating claim ${claimId} to status: ${status}`);
+      
+      try {
+        await updateDoc(doc(db, "flaggedClaims", claimId), {
+          status: status,
+          reviewedAt: new Date(),
+          reviewedBy: 'Officer' // This would normally be the current user
+        });
+        
+        console.log("✅ Claim status updated successfully");
+        closeModal();
+        await refreshData(); // Refresh the data to show updated status
+        
+      } catch (error) {
+        console.error("❌ Error updating claim status:", error);
+        alert('Failed to update claim status: ' + error.message);
+      }
+    }
+
+    function closeModal() {
+      document.getElementById('claimModal').classList.add('hidden');
+    }
+
+    function showError(message) {
+      document.getElementById('loadingState').classList.add('hidden');
+      document.getElementById('errorState').classList.remove('hidden');
+      document.getElementById('errorMessage').textContent = message;
+    }
+
+    function getStatusClass(status) {
+      switch (status) {
+        case 'Approved': return 'bg-green-100 text-green-800';
+        case 'Rejected': return 'bg-brown-100 text-brown-800';
+        default: return 'bg-amber-100 text-amber-800';
+      }
+    }
+
+    function getStatusTextClass(status) {
+      switch (status) {
+        case 'Approved': return 'text-green-600';
+        case 'Rejected': return 'text-brown-600';
+        default: return 'text-amber-600';
+      }
+    }
+
+    function getRiskClass(riskScore) {
+      if (!riskScore) return 'bg-gray-100 text-gray-800';
+      if (riskScore >= 80) return 'bg-brown-100 text-brown-800';
+      if (riskScore >= 60) return 'bg-amber-100 text-amber-800';
+      return 'bg-green-100 text-green-800';
+    }
+
+    function getRiskTextClass(riskScore) {
+      if (!riskScore) return 'text-gray-600';
+      if (riskScore >= 80) return 'text-brown-600';
+      if (riskScore >= 60) return 'text-amber-600';
+      return 'text-green-600';
+    }
+
+    function getRiskDescription(riskScore) {
+      if (!riskScore) return 'No risk assessment available';
+      if (riskScore >= 80) return 'High Risk - Requires immediate attention';
+      if (riskScore >= 60) return 'Medium Risk - Review recommended';
+      return 'Low Risk - Routine review';
+    }
+
+    function formatDate(timestamp) {
+      if (!timestamp) return 'N/A';
+      const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+      return date.toLocaleDateString();
+    }
+
+    // Make functions available globally for onclick handlers
+    window.openClaimDetails = openClaimDetails;
+    window.updateClaimStatus = updateClaimStatus;
+    window.closeModal = closeModal;
+  </script>
+
+  <style>
+    .bg-beige-50 { background-color: #fefaf0; }
+    .bg-beige-100 { background-color: #fdf6e3; }
+    .border-beige-200 { border-color: #faf0d7; }
+    .border-beige-300 { border-color: #e5d5b8; }
+    
+    .bg-green-100 { background-color: #dcfce7; }
+    .bg-amber-100 { background-color: #fef3c7; }
+    .bg-brown-100 { background-color: #ffedd5; }
+    
+    .text-green-800 { color: #166534; }
+    .text-amber-800 { color: #92400e; }
+    .text-brown-800 { color: #9a3412; }
+  </style>
+</body>
+</html>
