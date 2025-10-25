@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Government Claim Management</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-beige-50 min-h-screen">
+
+  <!-- Header placeholder -->
+  <div id="headerContainer"></div>
+
+  <!-- Main content -->
+  <main class="p-6 max-w-7xl mx-auto">
+    <!-- Page Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-900">Claim Management Dashboard</h1>
+      <p class="text-gray-700 mt-2">Monitor and manage all flagged claims across government schemes</p>
+    </div>
+
+    <!-- Dashboard Summary Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div class="bg-white rounded-xl shadow-sm border border-beige-200 p-6">
+        <div class="flex items-center">
+          <div class="p-3 bg-green-50 rounded-lg">
+            <span class="text-green-600 text-2xl">📋</span>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm font-medium text-gray-700">Total Claims</p>
+            <h3 id="totalClaims" class="text-2xl font-bold text-gray-900">--</h3>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl shadow-sm border border-beige-200 p-6">
+        <div class="flex items-center">
+          <div class="p-3 bg-amber-50 rounded-lg">
+            <span class="text-amber-600 text-2xl">⏳</span>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm font-medium text-gray-700">Pending Review</p>
+            <h3 id="pendingClaims" class="text-2xl font-bold text-gray-900">--</h3>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl shadow-sm border border-beige-200 p-6">
+        <div class="flex items-center">
+          <div class="p-3 bg-blue-50 rounded-lg">
+            <span class="text-blue-600 text-2xl">✅</span>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm font-medium text-gray-700">Approved</p>
+            <h3 id="approvedClaims" class="text-2xl font-bold text-gray-900">--</h3>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl shadow-sm border border-beige-200 p-6">
+        <div class="flex items-center">
+          <div class="p-3 bg-brown-50 rounded-lg">
+            <span class="text-brown-600 text-2xl">❌</span>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm font-medium text-gray-700">Rejected</p>
+            <h3 id="rejectedClaims" class="text-2xl font-bold text-gray-900">--</h3>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Schemes Section -->
+    <div class="bg-white rounded-xl shadow-sm border border-beige-200">
+      <div class="p-6 border-b border-beige-200">
+        <h2 class="text-xl font-semibold text-gray-800">Government Schemes</h2>
+        <p class="text-gray-700 mt-1">Manage claims for different government schemes</p>
+      </div>
+      
+      <div class="p-6">
+        <div id="schemesContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <!-- Scheme cards will be dynamically added here -->
+          <div class="col-span-full text-center py-8">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+            <p class="text-gray-600 mt-2">Loading schemes...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { loadHeader } from './assets/js/header.js';
+    import { requireLogin, db } from './assets/js/firebase.js';
+    import { collection, getDocs } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+    console.log("🚀 Dashboard script started");
+
+    // ✅ Require login and load header
+    try {
+      await requireLogin();
+      console.log("✅ User authenticated");
+      loadHeader('headerContainer');
+    } catch (error) {
+      console.error("❌ Auth error:", error);
+    }
+
+    // ✅ Load dashboard data
+    async function loadDashboardData() {
+      console.log("📊 Loading dashboard data...");
+      try {
+        await Promise.all([
+          loadDashboardSummary(),
+          loadSchemes()
+        ]);
+        console.log("✅ Dashboard data loaded successfully");
+      } catch (error) {
+        console.error("❌ Error loading dashboard:", error);
+        showError("Failed to load dashboard data. Please refresh the page.");
+      }
+    }
+
+    // ✅ Load dashboard summary with claim statistics
+    async function loadDashboardSummary() {
+      try {
+        console.log("📈 Loading dashboard summary...");
+        const claimsRef = collection(db, "flaggedClaims");
+        const snapshot = await getDocs(claimsRef);
+        
+        console.log(`📊 Found ${snapshot.size} flagged claims`);
+        
+        const totalClaims = snapshot.size;
+        const pendingClaims = snapshot.docs.filter(doc => {
+          const data = doc.data();
+          return !data.status || data.status === 'Pending' || data.status === 'Under Review';
+        }).length;
+        const approvedClaims = snapshot.docs.filter(doc => doc.data().status === 'Approved').length;
+        const rejectedClaims = snapshot.docs.filter(doc => doc.data().status === 'Rejected').length;
+
+        console.log(`📊 Stats - Total: ${totalClaims}, Pending: ${pendingClaims}, Approved: ${approvedClaims}, Rejected: ${rejectedClaims}`);
+
+        // Update summary cards
+        document.getElementById('totalClaims').textContent = totalClaims;
+        document.getElementById('pendingClaims').textContent = pendingClaims;
+        document.getElementById('approvedClaims').textContent = approvedClaims;
+        document.getElementById('rejectedClaims').textContent = rejectedClaims;
+
+      } catch (error) {
+        console.error("❌ Error loading dashboard summary:", error);
+        document.getElementById('totalClaims').textContent = 'Error';
+        document.getElementById('pendingClaims').textContent = 'Error';
+        document.getElementById('approvedClaims').textContent = 'Error';
+        document.getElementById('rejectedClaims').textContent = 'Error';
+      }
+    }
+
+    // ✅ Load schemes from Firestore
+    async function loadSchemes() {
+      const container = document.getElementById('schemesContainer');
+      
+      try {
+        console.log("🏛️ Loading schemes from Firestore...");
+        const schemesCol = collection(db, "schemes");
+        const snapshot = await getDocs(schemesCol);
+        
+        console.log(`🏛️ Found ${snapshot.size} schemes in collection`);
+        
+        // Log all scheme documents for debugging
+        snapshot.forEach(doc => {
+          console.log(`📄 Scheme: ${doc.id}`, doc.data());
+        });
+
+        if (snapshot.empty) {
+          console.log("🏛️ No schemes found in Firestore");
+          container.innerHTML = `
+            <div class="col-span-full text-center py-8">
+              <div class="text-gray-400 text-6xl mb-4">📋</div>
+              <h3 class="text-lg font-medium text-gray-900 mb-2">No Schemes Found</h3>
+              <p class="text-gray-600 mb-4">No government schemes are currently available in the system.</p>
+              <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 text-left max-w-md mx-auto">
+                <p class="text-amber-800 text-sm">
+                  <strong>To fix this:</strong><br>
+                  1. Go to Firebase Console<br>
+                  2. Open Firestore Database<br>
+                  3. Create a "schemes" collection<br>
+                  4. Add scheme documents (pmfby, kcc, etc.)
+                </p>
+              </div>
+            </div>
+          `;
+          return;
+        }
+
+        // Create scheme cards
+        container.innerHTML = '';
+        snapshot.forEach(doc => {
+          const scheme = doc.data();
+          console.log(`🎨 Creating card for scheme: ${scheme.name || doc.id}`);
+          
+          const card = document.createElement('div');
+          card.className = 'bg-green-50 rounded-lg border border-green-200 p-6 hover:shadow-md transition-all duration-300 hover:border-green-300';
+          card.innerHTML = `
+            <div class="flex items-start justify-between mb-4">
+              <div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-1">${scheme.name || 'Unnamed Scheme'}</h3>
+                <span class="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">${scheme.code || doc.id}</span>
+              </div>
+              <div class="text-2xl">${scheme.icon || '🏛️'}</div>
+            </div>
+            
+            <p class="text-gray-700 text-sm mb-4 line-clamp-2">${scheme.description || 'Government welfare scheme.'}</p>
+            
+            <div class="space-y-2 text-sm mb-4">
+              <div class="flex justify-between items-center">
+                <span class="text-gray-600">Flagged Claims:</span>
+                <span class="font-semibold ${scheme.flaggedCount > 0 ? 'text-amber-600' : 'text-green-600'}">
+                  ${scheme.flaggedCount || 0}
+                </span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-gray-600">Active Claims:</span>
+                <span class="font-semibold">${scheme.activeClaims || 0}</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-gray-600">Total Beneficiaries:</span>
+                <span class="font-semibold">${scheme.totalBeneficiaries || 0}</span>
+              </div>
+            </div>
+            
+            <a href="schemedetails.html?id=${doc.id}" 
+               class="block w-full bg-green-600 hover:bg-green-700 text-white text-center py-2 px-4 rounded-lg transition-colors duration-300 font-medium">
+              Manage Claims
+            </a>
+          `;
+          container.appendChild(card);
+        });
+
+        console.log("✅ Schemes loaded and displayed successfully");
+
+      } catch (error) {
+        console.error("❌ Error loading schemes:", error);
+        container.innerHTML = `
+          <div class="col-span-full text-center py-8">
+            <div class="text-brown-400 text-6xl mb-4">⚠️</div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Failed to Load Schemes</h3>
+            <p class="text-gray-600 mb-4">Please check your connection and try again.</p>
+            <details class="text-left max-w-md mx-auto bg-brown-50 p-4 rounded-lg">
+              <summary class="cursor-pointer font-medium text-brown-800">Error Details</summary>
+              <pre class="text-xs mt-2 text-brown-600 whitespace-pre-wrap">${error.message}</pre>
+            </details>
+            <button onclick="location.reload()" class="mt-4 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+              Retry
+            </button>
+          </div>
+        `;
+      }
+    }
+
+    // ✅ Utility function to show errors
+    function showError(message) {
+      const alert = document.createElement('div');
+      alert.className = 'fixed top-4 right-4 bg-brown-50 border border-brown-200 rounded-lg p-4 shadow-lg max-w-sm z-50';
+      alert.innerHTML = `
+        <div class="flex items-center">
+          <div class="text-brown-400 text-xl mr-3">⚠️</div>
+          <div>
+            <p class="text-brown-800 font-medium">Error</p>
+            <p class="text-brown-600 text-sm">${message}</p>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(alert);
+      
+      setTimeout(() => {
+        alert.remove();
+      }, 5000);
+    }
+
+    // ✅ Initialize dashboard
+    document.addEventListener('DOMContentLoaded', loadDashboardData);
+    
+    // Also try loading if DOM is already ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', loadDashboardData);
+    } else {
+      loadDashboardData();
+    }
+  </script>
+
+  <style>
+    .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    
+    /* Custom color palette */
+    .bg-beige-50 { background-color: #fefaf0; }
+    .bg-beige-100 { background-color: #fdf6e3; }
+    .bg-beige-200 { background-color: #faf0d7; }
+    .border-beige-200 { border-color: #faf0d7; }
+    
+    .bg-green-50 { background-color: #f0fdf4; }
+    .bg-green-100 { background-color: #dcfce7; }
+    .bg-green-200 { background-color: #bbf7d0; }
+    
+    .bg-blue-50 { background-color: #f0f9ff; }
+    .bg-blue-100 { background-color: #e0f2fe; }
+    
+    .bg-amber-50 { background-color: #fffbeb; }
+    .bg-amber-100 { background-color: #fef3c7; }
+    .bg-amber-200 { background-color: #fde68a; }
+    
+    .bg-brown-50 { background-color: #fef7ed; }
+    .bg-brown-100 { background-color: #ffedd5; }
+    .bg-brown-200 { background-color: #fed7aa; }
+    
+    .text-brown-400 { color: #fb923c; }
+    .text-brown-600 { color: #ea580c; }
+    .text-brown-800 { color: #9a3412; }
+  </style>
+</body>
+</html>
