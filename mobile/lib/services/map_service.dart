@@ -1,5 +1,6 @@
 // ignore_for_file: curly_braces_in_flow_control_structures, avoid_print
 
+import 'dart:math' as math;
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -91,5 +92,72 @@ class MapService {
       print('Error getting coordinates: $e');
       return null;
     }
+  }
+
+  // Calculate polygon area in acres using spherical law of cosines
+  static Future<double> calculatePolygonArea(List<LatLng> points) async {
+    if (points.length < 3) return 0.0;
+
+    // Close the polygon if not closed
+    List<LatLng> polygonPoints = List.from(points);
+    if (polygonPoints.first != polygonPoints.last) {
+      polygonPoints.add(polygonPoints.first);
+    }
+
+    double area = 0.0;
+    const double earthRadius = 6371000.0; // meters
+
+    for (int i = 0; i < polygonPoints.length - 1; i++) {
+      LatLng p1 = polygonPoints[i];
+      LatLng p2 = polygonPoints[i + 1];
+
+      double lat1 = p1.latitude * math.pi / 180;
+      double lon1 = p1.longitude * math.pi / 180;
+      double lat2 = p2.latitude * math.pi / 180;
+      double lon2 = p2.longitude * math.pi / 180;
+
+      area += (lon2 - lon1) * (2 + math.sin(lat1) + math.sin(lat2));
+    }
+
+    area = area * earthRadius * earthRadius / 2.0;
+    area = area.abs();
+
+    // Convert from square meters to acres (1 acre = 4046.86 square meters)
+    double areaInAcres = area / 4046.86;
+    return areaInAcres;
+  }
+
+  // Calculate centroid of polygon
+  static LatLng calculateCentroid(List<LatLng> points) {
+    double sumLat = 0.0;
+    double sumLng = 0.0;
+
+    for (final point in points) {
+      sumLat += point.latitude;
+      sumLng += point.longitude;
+    }
+
+    return LatLng(sumLat / points.length, sumLng / points.length);
+  }
+
+  // Check if point is inside polygon
+  static bool isPointInPolygon(LatLng point, List<LatLng> polygon) {
+    bool c = false;
+    int n = polygon.length;
+    int j = n - 1;
+
+    for (int i = 0; i < n; j = i++) {
+      if (((polygon[i].latitude > point.latitude) !=
+              (polygon[j].latitude > point.latitude)) &&
+          (point.longitude <
+              (polygon[j].longitude - polygon[i].longitude) *
+                      (point.latitude - polygon[i].latitude) /
+                      (polygon[j].latitude - polygon[i].latitude) +
+                  polygon[i].longitude)) {
+        c = !c;
+      }
+    }
+
+    return c;
   }
 }

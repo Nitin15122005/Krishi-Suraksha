@@ -330,7 +330,7 @@ class ProfilePage extends StatelessWidget {
                         size: 20, color: Colors.green)
                     : Icon(Icons.edit, size: 20, color: Colors.green),
                 onPressed: () {
-                  _navigateToFarmDetails(context);
+                  _navigateToLandDetails(context);
                 },
               ),
             ],
@@ -342,7 +342,7 @@ class ProfilePage extends StatelessWidget {
               message: "No farm details added",
               buttonText: "Add Farm Details",
               onPressed: () {
-                _navigateToFarmDetails(context);
+                _navigateToLandDetails(context);
               },
             )
           else
@@ -482,8 +482,8 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  // Navigation to FarmDetailsPage
-  void _navigateToFarmDetails(BuildContext context) {
+  // Fixed navigation method name
+  void _navigateToLandDetails(BuildContext context) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -504,7 +504,7 @@ class ProfilePage extends StatelessWidget {
   Widget _buildFarmCard(FarmModel farm, BuildContext context) {
     return GestureDetector(
       onTap: () {
-        _navigateToFarmDetails(context);
+        _navigateToLandDetails(context);
       },
       child: Container(
         width: double.infinity,
@@ -570,6 +570,24 @@ class ProfilePage extends StatelessWidget {
                   ),
               ],
             ),
+            // Show boundary info if available
+            if (farm.boundary != null && farm.boundary!.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Row(
+                  children: [
+                    Icon(Icons.polyline, size: 12, color: Colors.green),
+                    SizedBox(width: 4),
+                    Text(
+                      "Boundary defined (${farm.boundary!.length} points)",
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.green[700],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
           ],
         ),
       ),
@@ -580,8 +598,10 @@ class ProfilePage extends StatelessWidget {
     final bank = user.bankDetail!;
     return Column(
       children: [
-        _buildInfoRowWithVerification("Account Number",
-            "XXXX XXXX XXXX ${bank.accountNumber.substring(bank.accountNumber.length - 4)}"),
+        _buildInfoRowWithVerification(
+          "Account Number",
+          "XXXX XXXX XXXX ${bank.accountNumber.substring(bank.accountNumber.length - 4)}",
+        ),
         _buildInfoRowWithVerification("IFSC Code", bank.ifscCode),
         _buildInfoRowWithVerification("Bank Name", bank.bankName),
         _buildInfoRowWithVerification("Branch", bank.branch),

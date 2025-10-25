@@ -1,5 +1,5 @@
 class UserModel {
-  final String farmerId; // Changed from id to farmerId
+  final String farmerId;
   final String name;
   final String email;
   final String? phoneNumber;
@@ -7,10 +7,10 @@ class UserModel {
   final DateTime? createdAt;
   final String? aadharNumber;
   final String? address;
-  final List<FarmModel> farms; // Changed from landDetails to farms
+  final List<FarmModel> farms;
   final BankDetail? bankDetail;
-  final bool isPhoneVerified; // Added verification status
-  final bool isAadhaarVerified; // Added verification status
+  final bool isPhoneVerified;
+  final bool isAadhaarVerified;
 
   UserModel({
     required this.farmerId,
@@ -27,7 +27,6 @@ class UserModel {
     this.isAadhaarVerified = false,
   });
 
-  // Helper getters for profile completion
   bool get isProfileComplete {
     return phoneNumber != null &&
         aadharNumber != null &&
@@ -39,7 +38,7 @@ class UserModel {
   }
 
   double get completionPercentage {
-    int completedFields = 2; // name and email are always there
+    int completedFields = 2;
     if (phoneNumber != null) completedFields++;
     if (aadharNumber != null) completedFields++;
     if (address != null) completedFields++;
@@ -48,7 +47,7 @@ class UserModel {
     if (isPhoneVerified) completedFields++;
     if (isAadhaarVerified) completedFields++;
 
-    return completedFields / 8.0; // Total 8 fields to complete
+    return completedFields / 8.0;
   }
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -125,13 +124,14 @@ class UserModel {
 class FarmModel {
   final String farmId;
   final String ownerFarmerId;
-  final String location; // "lat:19.0760,lon:72.8777" format
+  final String location;
   final String cropType;
-  final double area; // Changed from String to double
+  final double area;
   final String? description;
-  final String? landRecordHash; // SHA-256 hash of 7-12 doc
+  final String? landRecordHash;
   final String? activeClaimId;
   final DateTime? createdAt;
+  final List<Map<String, double>>? boundary;
 
   FarmModel({
     required this.farmId,
@@ -143,9 +143,9 @@ class FarmModel {
     this.landRecordHash,
     this.activeClaimId,
     this.createdAt,
+    this.boundary,
   });
 
-  // Helper method to get latitude and longitude
   double? get latitude {
     try {
       final parts = location.split(',');
@@ -184,6 +184,9 @@ class FarmModel {
       activeClaimId: json['activeClaimId'],
       createdAt:
           json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
+      boundary: json['boundary'] != null
+          ? List<Map<String, double>>.from(json['boundary'])
+          : null,
     );
   }
 
@@ -198,6 +201,7 @@ class FarmModel {
       'landRecordHash': landRecordHash,
       'activeClaimId': activeClaimId,
       'createdAt': createdAt?.toIso8601String(),
+      'boundary': boundary,
     };
   }
 }
@@ -238,20 +242,19 @@ class BankDetail {
   }
 }
 
-// Claim Model for claim-related data
 class ClaimModel {
   final String claimId;
   final String farmId;
   final String farmerId;
   final String reason;
-  final String status; // "Pending", "Approved", "Rejected", "Human_Review"
-  final double damagePercentage; // from satellite analysis
-  final double payoutAmount; // calculated or approved
-  final String? satelliteDataHash; // hash of Python output summary
+  final String status;
+  final double damagePercentage;
+  final double payoutAmount;
+  final String? satelliteDataHash;
   final String? assignedAuditor;
   final String? rejectionReason;
   final DateTime? createdAt;
-  final List<String>? evidenceImages; // URLs from Firebase Storage
+  final List<String>? evidenceImages;
   final String? auditorNotes;
 
   ClaimModel({

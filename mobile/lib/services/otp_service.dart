@@ -18,7 +18,7 @@ class OtpService {
       // - Your custom SMS gateway
 
       // For now, just simulate delay
-      await Future.delayed(Duration(seconds: 2));
+      await Future.delayed(const Duration(seconds: 2));
 
       if (kDebugMode) {
         debugPrint('OTP sent to $phone: $otp');
@@ -39,7 +39,7 @@ class OtpService {
       // TODO: Integrate with UIDAI API for Aadhaar verification
       // This is a mock implementation
 
-      await Future.delayed(Duration(seconds: 2));
+      await Future.delayed(const Duration(seconds: 2));
 
       if (kDebugMode) {
         debugPrint('Aadhaar OTP sent for: $aadhaar');
