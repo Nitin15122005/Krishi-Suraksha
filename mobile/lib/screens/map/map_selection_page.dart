@@ -30,6 +30,7 @@ class _MapSelectionPageState extends State<MapSelectionPage> {
   bool _isDrawingPolygon = false;
   List<LatLng> _polygonPoints = [];
   double _calculatedArea = 0.0;
+  MapType _currentMapType = MapType.normal;
 
   final Set<Marker> _markers = {};
   final Set<Polygon> _polygons = {};
@@ -292,6 +293,14 @@ class _MapSelectionPageState extends State<MapSelectionPage> {
     }
   }
 
+  void _toggleMapType() {
+    setState(() {
+      _currentMapType = _currentMapType == MapType.normal
+          ? MapType.satellite
+          : MapType.normal;
+    });
+  }
+
   void _confirmSelection() {
     if (widget.isFarmLocation) {
       // Farm boundary selection
@@ -351,13 +360,43 @@ class _MapSelectionPageState extends State<MapSelectionPage> {
     return LatLng(sumLat / points.length, sumLng / points.length);
   }
 
+  Widget _buildMapTypeToggle() {
+    return Positioned(
+      top: 16,
+      right: 16,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: IconButton(
+          onPressed: _toggleMapType,
+          icon: Icon(
+            _currentMapType == MapType.normal ? Icons.satellite : Icons.map,
+            color: Colors.green[800],
+          ),
+          tooltip: _currentMapType == MapType.normal
+              ? 'Switch to Satellite View'
+              : 'Switch to Normal View',
+        ),
+      ),
+    );
+  }
+
   Widget _buildFarmControls() {
     if (!widget.isFarmLocation) return SizedBox();
 
     return Positioned(
       top: 16,
       left: 16,
-      right: 16,
+      right: 80, // Leave space for map type toggle
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
@@ -374,13 +413,27 @@ class _MapSelectionPageState extends State<MapSelectionPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Farm Boundary Selection',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.green[900],
-              ),
+            Row(
+              children: [
+                Icon(
+                  _currentMapType == MapType.normal
+                      ? Icons.map
+                      : Icons.satellite,
+                  size: 16,
+                  color: Colors.green[800],
+                ),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Farm Boundary Selection',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green[900],
+                    ),
+                  ),
+                ),
+              ],
             ),
             SizedBox(height: 8),
             if (_calculatedArea > 0)
@@ -445,6 +498,49 @@ class _MapSelectionPageState extends State<MapSelectionPage> {
                   ),
                 ),
               ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMapInstructions() {
+    return Positioned(
+      bottom: 80,
+      left: 16,
+      right: 16,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.info_outline,
+              size: 16,
+              color: Colors.blue,
+            ),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                _currentMapType == MapType.normal
+                    ? 'Use satellite view to better identify farm boundaries'
+                    : 'Switch to normal view for better road visibility',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[700],
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -553,6 +649,7 @@ class _MapSelectionPageState extends State<MapSelectionPage> {
                         zoomControlsEnabled: false,
                         compassEnabled: true,
                         mapToolbarEnabled: false,
+                        mapType: _currentMapType,
                       ),
               ),
 
@@ -599,7 +696,11 @@ class _MapSelectionPageState extends State<MapSelectionPage> {
               ),
             ],
           ),
-          _buildFarmControls(),
+
+          // Overlay controls
+          _buildMapTypeToggle(),
+          if (widget.isFarmLocation) _buildFarmControls(),
+          _buildMapInstructions(),
         ],
       ),
     );
