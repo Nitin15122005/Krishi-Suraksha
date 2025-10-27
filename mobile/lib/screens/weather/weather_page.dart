@@ -1,7 +1,7 @@
 // ignore_for_file: prefer_const_constructors, prefer_final_fields, sized_box_for_whitespace, curly_braces_in_flow_control_structures
 
 import 'package:flutter/material.dart';
-import '../map/map_selection_page.dart'; // ADD THIS IMPORT
+import '../map/weather_updates_map.dart'; // ADD THIS IMPORT
 
 class WeatherPage extends StatefulWidget {
   const WeatherPage({super.key});
@@ -89,14 +89,13 @@ class _WeatherPageState extends State<WeatherPage> {
     {'name': 'Wind Speed', 'value': 12, 'status': 'Moderate', 'trend': 'down'},
   ];
 
-  // UPDATED: Change location method with map integration
+  // FIXED: Removed the 'isFarmLocation' parameter since it doesn't exist in WeatherUpdatesMap
   void _changeLocation() async {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => MapSelectionPage(
-          isFarmLocation: true,
-        ),
+        builder: (context) =>
+            WeatherUpdatesMap(), // FIXED: Removed the undefined parameter
       ),
     );
 
@@ -108,6 +107,9 @@ class _WeatherPageState extends State<WeatherPage> {
         _currentWeather['longitude'] = result['longitude'];
       });
 
+      // Call weather API with new coordinates
+      _fetchWeatherData(result['latitude'], result['longitude']);
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Location updated to ${result['address']}'),
@@ -115,6 +117,40 @@ class _WeatherPageState extends State<WeatherPage> {
         ),
       );
     }
+  }
+
+  // FIXED: Added the missing _fetchWeatherData method
+  void _fetchWeatherData(double latitude, double longitude) {
+    // TODO: BACKEND - Implement actual weather API call
+    print('Fetching weather data for: $latitude, $longitude');
+
+    // Simulate API call with mock data
+    setState(() {
+      _currentWeather = {
+        'temperature':
+            25 + (latitude % 10).toInt(), // Mock variation based on coordinates
+        'feelsLike': 27 + (longitude % 10).toInt(),
+        'condition': 'Partly Cloudy',
+        'humidity': 60 + (latitude % 30).toInt(),
+        'windSpeed': 8 + (longitude % 15).toInt(),
+        'pressure': 1010 + (latitude % 10).toInt(),
+        'visibility': 12,
+        'uvIndex': 6,
+        'sunrise': '6:25 AM',
+        'sunset': '6:50 PM',
+        'location': _currentWeather['location'], // Keep the updated location
+        'latitude': latitude,
+        'longitude': longitude,
+      };
+    });
+
+    // Show loading success message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Weather data updated for new location'),
+        backgroundColor: Colors.blue,
+      ),
+    );
   }
 
   @override
@@ -488,12 +524,19 @@ class _WeatherPageState extends State<WeatherPage> {
   }
 
   void _refreshWeather() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Refreshing weather data...'),
-        backgroundColor: Colors.blue,
-      ),
-    );
+    // If we have coordinates, fetch fresh data
+    if (_currentWeather['latitude'] != null &&
+        _currentWeather['longitude'] != null) {
+      _fetchWeatherData(
+          _currentWeather['latitude'], _currentWeather['longitude']);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Refreshing weather data...'),
+          backgroundColor: Colors.blue,
+        ),
+      );
+    }
   }
 }
 

@@ -19,6 +19,7 @@ dependencies:
   geolocator: ^9.0.2
   geocoding: ^2.0.5
   crypto: ^3.0.3
+  latlong2: ^0.8.1
   
   # Firebase Dependencies
   firebase_core: ^2.24.0
