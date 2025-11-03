@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'signup_page.dart';
 import '../dashboard/dashboard_page.dart';
-import 'package:agri_claim_mobile/services/firebase_service.dart';
+// import 'package:agri_claim_mobile/services/firebase_service.dart';
+import 'package:agri_claim_mobile/services/api_service.dart';
+import 'package:agri_claim_mobile/services/storage_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -27,7 +29,9 @@ class _LoginPageState extends State<LoginPage>
   late Animation<double> _slideAnimation;
   late Animation<double> _scaleAnimation;
 
-  final FirebaseService _firebaseService = FirebaseService();
+  // final FirebaseService _firebaseService = FirebaseService();
+  final ApiService _apiService = ApiService();
+  final StorageService _storageService = StorageService();
 
   @override
   void initState() {
@@ -72,68 +76,37 @@ class _LoginPageState extends State<LoginPage>
   }
 
   void _submitForm() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-      });
+    if (!_formKey.currentState!.validate()) return;
 
-      try {
-        // Check if phone number exists in Firebase
-        final phoneExists =
-            await _firebaseService.isPhoneNumberExists(_phoneController.text);
+    setState(() => _isLoading = true);
 
-        if (!phoneExists) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Phone number not found. Please sign up first.'),
-              backgroundColor: Colors.orange,
-              behavior: SnackBarBehavior.floating,
-              duration: Duration(seconds: 3),
-            ),
-          );
-          setState(() {
-            _isLoading = false;
-          });
-          return;
-        }
+    try {
+      // Call the new API service login method
+      final response = await _apiService.login(
+        _phoneController.text,
+        _passwordController.text,
+      );
 
-        // Verify password using the new hashed method
-        final isValid = await _firebaseService.verifyLogin(
-            _phoneController.text, _passwordController.text);
+      await _storageService.saveSession(response);
+      // --- LOGIN SUCCESSFUL ---
+      setState(() => _isLoading = false);
 
-        if (isValid) {
-          // Get user data for farmerId
-          final userData =
-              await _firebaseService.getUserByPhone(_phoneController.text);
-          final farmerId = userData?['profile']?['farmerId'] as String?;
+      // TODO: Save the user data (response.farmerID, response.token, etc.)
+      // to secure storage on the device (e.g., flutter_secure_storage).
+      print("Login Success: FarmerID=${response.farmerID}, Token=${response.token}");
 
-          // TODO: Save farmerId to shared preferences/local storage
-          // TODO: Update user session in Firebase
+      _navigateToDashboard();
 
-          _navigateToDashboard();
-        } else {
-          // Password doesn't match
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Invalid password. Please try again.'),
-              backgroundColor: Colors.red,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Login failed: $e'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      } finally {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          // Use the error message from the backend
+          content: Text('Login failed: ${e.toString().replaceFirst("Exception: ", "")}'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -151,7 +124,7 @@ class _LoginPageState extends State<LoginPage>
               child: child,
             );
           },
-          transitionDuration: Duration(milliseconds: 500),
+          transitionDuration: Duration(milliseconds: 250),
         ),
         (route) => false,
       );

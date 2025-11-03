@@ -19,13 +19,13 @@
             android:value="AIzaSyBRk3ri0ZLOonLqP3dSzy8oQ1wunW6QvYY"/>
             
         <!-- Firebase Messaging Service -->
-        <service
+        <!-- <service
             android:name=".MyFirebaseMessagingService"
             android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
-        </service>
+        </service> -->
             
         <activity
             android:name=".MainActivity"

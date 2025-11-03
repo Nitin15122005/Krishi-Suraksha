@@ -1,11 +1,14 @@
-// ignore_for_file: unused_local_variable, prefer_const_constructors
-
+import 'dart:io';
 import 'package:flutter/material.dart';
-import '../../models/user_model.dart';
-import '../map/map_selection_page.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:agri_claim_mobile/models/farm_model.dart';
+import 'package:agri_claim_mobile/services/api_service.dart';
+import 'package:agri_claim_mobile/services/cloudinary_service.dart';
+import 'package:agri_claim_mobile/services/storage_service.dart'; 
 
 class NewClaimPage extends StatefulWidget {
-  const NewClaimPage({super.key});
+  final List<Farm> farms;
+  const NewClaimPage({super.key, required this.farms});
 
   @override
   State<NewClaimPage> createState() => _NewClaimPageState();
@@ -13,81 +16,34 @@ class NewClaimPage extends StatefulWidget {
 
 class _NewClaimPageState extends State<NewClaimPage> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _farmIdController = TextEditingController();
-  final TextEditingController _cropTypeController = TextEditingController();
-  final TextEditingController _landAreaController = TextEditingController();
-  final TextEditingController _damageDateController = TextEditingController();
-  final TextEditingController _damageTypeController = TextEditingController();
-  final TextEditingController _estimatedLossController =
-      TextEditingController();
-  final TextEditingController _descriptionController = TextEditingController();
-  final TextEditingController _locationController = TextEditingController();
-  final TextEditingController _surveyNumberController = TextEditingController();
+  final ApiService _apiService = ApiService();
+  final CloudinaryService _cloudinaryService = CloudinaryService();
+  final StorageService _storageService = StorageService();
 
-  final List<String> _selectedEvidence = [];
+  final _damageDateController = TextEditingController();
+  final _damageTypeController = TextEditingController();
+  final _descriptionController = TextEditingController();
+
+  Farm? _selectedFarm;
+  final List<File> _evidenceFiles = [];
+  final ImagePicker _picker = ImagePicker();
   bool _isSubmitting = false;
-  DateTime? _selectedDate;
-  Map<String, dynamic>? _selectedLocation;
-
-  // Dropdown options
-  final List<String> _cropTypes = [
-    'Wheat',
-    'Rice',
-    'Corn',
-    'Soybean',
-    'Cotton',
-    'Sugarcane',
-    'Pulses',
-    'Oilseeds',
-    'Vegetables',
-    'Fruits',
-    'Other'
-  ];
 
   final List<String> _damageTypes = [
     'Pest Attack',
-    'Disease Outbreak',
     'Flood Damage',
     'Drought',
     'Storm/Hail Damage',
     'Fire Damage',
-    'Soil Erosion',
-    'Wild Animal Damage',
     'Heavy Rainfall',
     'Other Natural Calamity'
   ];
-
-  // TODO: BACKEND - Replace with actual farmer's farms from API
-  final List<FarmModel> _farmerFarms = [
-    FarmModel(
-      farmId: "FARM_001",
-      ownerFarmerId: "FARMER_001",
-      location: "lat:19.0760,lon:72.8777",
-      cropType: "Wheat",
-      area: 5.2,
-      description: "Main wheat farm",
-    ),
-    FarmModel(
-      farmId: "FARM_002",
-      ownerFarmerId: "FARMER_001",
-      location: "lat:19.0760,lon:72.8777",
-      cropType: "Rice",
-      area: 3.5,
-      description: "Rice paddy field",
-    ),
-  ];
-
+  
   @override
   void dispose() {
-    _farmIdController.dispose();
-    _cropTypeController.dispose();
-    _landAreaController.dispose();
     _damageDateController.dispose();
     _damageTypeController.dispose();
-    _estimatedLossController.dispose();
     _descriptionController.dispose();
-    _locationController.dispose();
-    _surveyNumberController.dispose();
     super.dispose();
   }
 
@@ -98,138 +54,37 @@ class _NewClaimPageState extends State<NewClaimPage> {
       firstDate: DateTime(2020),
       lastDate: DateTime.now(),
     );
-    if (picked != null && picked != _selectedDate) {
+    if (picked != null) {
       setState(() {
-        _selectedDate = picked;
-        _damageDateController.text =
-            "${picked.day}/${picked.month}/${picked.year}";
+        _damageDateController.text = "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
       });
     }
   }
 
-  Future<void> _selectLocation() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const MapSelectionPage(
-          isFarmLocation: true,
-        ),
-      ),
-    );
-
-    if (result != null && mounted) {
+  Future<void> _addEvidence(ImageSource source) async {
+    final XFile? pickedFile = await _picker.pickImage(source: source, imageQuality: 80);
+    if (pickedFile != null) {
       setState(() {
-        _selectedLocation = result;
-        _locationController.text = result['address'];
+        _evidenceFiles.add(File(pickedFile.path));
       });
     }
-  }
-
-  void _addEvidence() {
-    // TODO: Implement image picker and upload to Firebase Storage
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Add Evidence"),
-        content: Text("Choose evidence type:"),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // TODO: Open camera and upload to Firebase Storage
-            },
-            child: Text("Camera"),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // TODO: Open gallery and upload to Firebase Storage
-            },
-            child: Text("Gallery"),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // TODO: Add document and upload to Firebase Storage
-            },
-            child: Text("Document"),
-          ),
-        ],
-      ),
-    );
   }
 
   void _removeEvidence(int index) {
     setState(() {
-      _selectedEvidence.removeAt(index);
+      _evidenceFiles.removeAt(index);
     });
   }
 
-  void _submitClaim() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    setState(() {
-      _isSubmitting = true;
-    });
-
-    // TODO: BACKEND - Submit claim data to API
-    try {
-      final claimData = {
-        'farmId': _farmIdController.text,
-        'cropType': _cropTypeController.text,
-        'landArea': double.tryParse(_landAreaController.text) ?? 0.0,
-        'damageDate': _damageDateController.text,
-        'damageType': _damageTypeController.text,
-        'estimatedLoss': double.tryParse(_estimatedLossController.text) ?? 0.0,
-        'description': _descriptionController.text,
-        'location': _locationController.text,
-        'surveyNumber': _surveyNumberController.text,
-        'evidence': _selectedEvidence,
-        'farmerId': "FARMER_001", // TODO: Get from logged in user
-        'status': 'Pending',
-        'damagePercentage': 0.0, // Will be set by satellite analysis
-        'payoutAmount': 0.0, // Will be calculated
-      };
-
-      // BACKEND: This should:
-      // 1. Generate ClaimID in backend
-      // 2. Store in Blockchain: ClaimID, FarmID, FarmerID, Reason, Status, DamagePercentage, PayoutAmount, SatelliteDataHash, AssignedAuditor, Timestamp
-      // 3. Store in Firebase: Full claim mirror, evidence images URLs, auditor notes, notifications
-
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 2));
-
-      // Show success dialog
-      _showSuccessDialog();
-    } catch (e) {
-      // TODO: Handle error
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to submit claim: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } finally {
-      setState(() {
-        _isSubmitting = false;
-      });
-    }
-  }
-
-  void _showSuccessDialog() {
+  void _showSuccessDialog(String claimID) {
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: Row(
-          children: const [
-            Icon(Icons.check_circle, color: Colors.green),
-            SizedBox(width: 8),
-            Text("Claim Submitted"),
-          ],
-        ),
+        title: Row(children: const [
+          Icon(Icons.check_circle, color: Colors.green),
+          SizedBox(width: 8), Text("Claim Submitted"),
+        ]),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -237,36 +92,18 @@ class _NewClaimPageState extends State<NewClaimPage> {
             Text("Your claim has been submitted successfully!"),
             SizedBox(height: 8),
             Text(
-              "Claim ID: CLM-${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.green,
-              ),
+              "Claim ID: $claimID",
+              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
             ),
             SizedBox(height: 8),
-            Text(
-              "Satellite analysis will be processed automatically.",
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-            ),
-            SizedBox(height: 8),
-            Text(
-              "You can track the status in your claims section.",
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-            ),
+            Text("Satellite analysis is now in progress.", style: TextStyle(fontSize: 12, color: Colors.grey[600])),
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context); // Close dialog
-              Navigator.pop(context); // Go back to claims page
-            },
-            child: Text("View My Claims"),
-          ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context); // Close dialog
-              Navigator.pop(context); // Go back to claims page
+              Navigator.pop(context); // Go back to previous page
             },
             child: Text("Done"),
           ),
@@ -275,6 +112,59 @@ class _NewClaimPageState extends State<NewClaimPage> {
     );
   }
 
+  void _submitClaim() async {
+    if (!_formKey.currentState!.validate()) return;
+    
+    if (_selectedFarm == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please select a farm'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      // 1. Get FarmerID for folder path
+      final farmerID = await _storageService.getFarmerID();
+      if (farmerID == null) throw Exception("User not logged in.");
+
+      // 2. Generate ClaimID
+      final String claimID = "CLAIM_${DateTime.now().millisecondsSinceEpoch}";
+      
+      // 3. Upload Evidence Files to Cloudinary
+      List<String> evidenceHashes = []; 
+      
+      for (var file in _evidenceFiles) {
+        final String fileUrl = await _cloudinaryService.uploadFile(
+          file,
+          claimID,
+          farmerID,
+        );
+        evidenceHashes.add(fileUrl);
+      }
+      
+      // 4. Call the API Service with the list of URLs
+      final message = await _apiService.submitClaim(
+        claimID: claimID,
+        farmID: _selectedFarm!.farmID,
+        reason: _damageTypeController.text,
+        damageDate: _damageDateController.text,
+        evidenceHashes: evidenceHashes,
+        description: _descriptionController.text,
+      );
+
+      _showSuccessDialog(claimID);
+
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+      );
+    } finally {
+      setState(() => _isSubmitting = false);
+    }
+  }
+ 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -303,27 +193,74 @@ class _NewClaimPageState extends State<NewClaimPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header Section
               _buildHeaderSection(),
               const SizedBox(height: 30),
-
-              // Farm Selection
-              _buildFarmSelectionSection(),
+              
+              // --- SECTION 1: FARM SELECTION (MODIFIED) ---
+              _buildSection(
+                title: "Select Farm",
+                icon: Icons.agriculture,
+                children: [
+                  // This is now a "smart" dropdown
+                  DropdownButtonFormField<Farm>(
+                    decoration: _buildInputDecoration(hintText: 'Select your farm', icon: Icons.grass),
+                    value: _selectedFarm,
+                    items: widget.farms.map((farm) {
+                      return DropdownMenuItem<Farm>(
+                        value: farm,
+                        // Show FarmID and CropType
+                        child: Text("${farm.farmID} (${farm.cropType})"),
+                      );
+                    }).toList(),
+                    onChanged: (Farm? farm) {
+                      setState(() {
+                        _selectedFarm = farm;
+                        // Auto-fill crop type!
+                        if (farm != null) {
+                          _damageTypeController.text = ''; 
+                        }
+                      });
+                    },
+                    validator: (value) => (value == null) ? 'Please select a farm' : null,
+                  ),
+                ],
+              ),
               const SizedBox(height: 25),
 
-              // Crop Information
-              _buildCropInformationSection(),
+              _buildSection(
+                title: "Damage Details",
+                icon: Icons.warning_amber,
+                children: [
+                  _buildDropdownField(
+                    controller: _damageTypeController,
+                    label: "Type of Damage",
+                    hintText: "Select damage type",
+                    items: _damageTypes,
+                    validator: (value) => (value == null || value.isEmpty) ? 'Please select damage type' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildFormField(
+                    controller: _damageDateController,
+                    label: "Date of Damage",
+                    hintText: "Select date",
+                    icon: Icons.calendar_today,
+                    readOnly: true,
+                    onTap: () => _selectDate(context),
+                    validator: (value) => (value == null || value.isEmpty) ? 'Please select damage date' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildFormField(
+                    controller: _descriptionController,
+                    label: "Damage Description (Optional)",
+                    hintText: "Describe the damage...",
+                    icon: Icons.description,
+                    maxLines: 3,
+                    validator: (value) => null, // Optional
+                  ),
+                ],
+              ),
               const SizedBox(height: 25),
 
-              // Damage Details
-              _buildDamageDetailsSection(),
-              const SizedBox(height: 25),
-
-              // Location Information
-              _buildLocationSection(),
-              const SizedBox(height: 25),
-
-              // Evidence Section
               _buildEvidenceSection(),
               const SizedBox(height: 30),
 
@@ -336,7 +273,180 @@ class _NewClaimPageState extends State<NewClaimPage> {
       ),
     );
   }
+  
+  // Widget _buildEvidenceSection() {
+  //   return _buildSection(
+  //     title: "Evidence (Optional)",
+  //     icon: Icons.attach_file,
+  //     children: [
+  //       Container(
+  //         width: double.infinity,
+  //         height: 100,
+  //         decoration: BoxDecoration(
+  //           color: Colors.grey[50],
+  //           borderRadius: BorderRadius.circular(12),
+  //           border: Border.all(
+  //             color: Colors.grey[300]!,
+  //             style: BorderStyle.solid,
+  //           ),
+  //         ),
+  //         child: Row(
+  //           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+  //           children: [
+  //             IconButton(
+  //               icon: Icon(Icons.camera_alt, color: Colors.grey[600], size: 40),
+  //               onPressed: () => _addEvidence(ImageSource.camera),
+  //             ),
+  //             IconButton(
+  //               icon: Icon(Icons.photo_library, color: Colors.grey[600], size: 40),
+  //               onPressed: () => _addEvidence(ImageSource.gallery),
+  //             ),
+  //           ],
+  //         ),
+  //       ),
+  //       const SizedBox(height: 12),
+  //       // Display picked files
+  //       GridView.builder(
+  //         shrinkWrap: true,
+  //         physics: const NeverScrollableScrollPhysics(),
+  //         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+  //           crossAxisCount: 3, crossAxisSpacing: 8, mainAxisSpacing: 8,
+  //         ),
+  //         itemCount: _evidenceFiles.length,
+  //         itemBuilder: (context, index) {
+  //           // return Stack(
+  //           //   children: [
+  //           //     Image.file(_evidenceFiles[index], fit: BoxFit.cover),
+  //           //     Positioned(
+  //           //       top: 0, right: 0,
+  //           //       child: GestureDetector(
+  //           //         onTap: () => _removeEvidence(index),
+  //           //         child: Container(
+  //           //           decoration: BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+  //           //           child: Icon(Icons.close, color: Colors.white, size: 16),
+  //           //         ),
+  //           //       ),
+  //           //     ),
+  //           //   ],
+  //           // );
+  //           return Container(
+  //             decoration: BoxDecoration(
+  //               borderRadius: BorderRadius.circular(8),
+  //               border: Border.all(color: Colors.grey[300]!),
+  //             ),
+  //             child: Stack(
+  //               fit: StackFit.expand,
+  //               children: [
+  //                 ClipRRect(
+  //                   borderRadius: BorderRadius.circular(8),
+  //                   child: Image.file(_evidenceFiles[index], fit: BoxFit.cover),
+  //                 ),
+  //                 Positioned(
+  //                   top: -10, right: -10,
+  //                   child: IconButton(
+  //                     icon: Icon(Icons.cancel, color: Colors.red.withOpacity(0.9)),
+  //                     onPressed: () => _removeEvidence(index),
+  //                   ),
+  //                 ),
+  //               ],
+  //             ),
+  //           );
+  //         },
+  //       ),
+  //     ],
+  //   );
+  // }
 
+  Widget _buildEvidenceSection() {
+    return _buildSection(
+      title: "Evidence (Optional)",
+      icon: Icons.attach_file,
+      children: [
+        Container(
+          width: double.infinity,
+          height: 100,
+          decoration: BoxDecoration(
+            color: Colors.grey[50],
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey[300]!, style: BorderStyle.solid),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildEvidenceButton(
+                icon: Icons.camera_alt,
+                label: "Camera",
+                onPressed: () => _addEvidence(ImageSource.camera),
+              ),
+              VerticalDivider(indent: 20, endIndent: 20),
+              _buildEvidenceButton(
+                icon: Icons.photo_library,
+                label: "Gallery",
+                onPressed: () => _addEvidence(ImageSource.gallery),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3, crossAxisSpacing: 8, mainAxisSpacing: 8,
+          ),
+          itemCount: _evidenceFiles.length,
+          itemBuilder: (context, index) {
+            return Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey[300]!),
+              ),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.file(_evidenceFiles[index], fit: BoxFit.cover),
+                  ),
+                  Positioned(
+                    top: -10, right: -10,
+                    child: IconButton(
+                      icon: Icon(Icons.cancel, color: Colors.red.withOpacity(0.9)),
+                      onPressed: () => _removeEvidence(index),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+  
+  Widget _buildEvidenceButton({required IconData icon, required String label, required VoidCallback onPressed}) {
+    return InkWell(
+      onTap: onPressed,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: Colors.green[700], size: 32),
+          SizedBox(height: 4),
+          Text(label, style: TextStyle(color: Colors.green[700])),
+        ],
+      ),
+    );
+  }
+
+  InputDecoration _buildInputDecoration({required String hintText, required IconData icon}) {
+     return InputDecoration(
+        hintText: hintText,
+        border: InputBorder.none,
+        prefixIcon: Icon(icon, color: Colors.green),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+     );
+  }
+  
   Widget _buildHeaderSection() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -374,287 +484,6 @@ class _NewClaimPageState extends State<NewClaimPage> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildFarmSelectionSection() {
-    return _buildSection(
-      title: "Select Farm",
-      icon: Icons.agriculture,
-      children: [
-        _buildDropdownField(
-          controller: _farmIdController,
-          label: "Farm",
-          hintText: "Select your farm",
-          items: _farmerFarms
-              .map((farm) => "${farm.cropType} - ${farm.area} acres")
-              .toList(),
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Please select a farm';
-            }
-            return null;
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCropInformationSection() {
-    return _buildSection(
-      title: "Crop Information",
-      icon: Icons.agriculture,
-      children: [
-        _buildDropdownField(
-          controller: _cropTypeController,
-          label: "Crop Type",
-          hintText: "Select crop type",
-          items: _cropTypes,
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Please select crop type';
-            }
-            return null;
-          },
-        ),
-        const SizedBox(height: 16),
-        _buildFormField(
-          controller: _landAreaController,
-          label: "Land Area Affected (acres)",
-          hintText: "e.g., 2.5",
-          icon: Icons.square_foot,
-          keyboardType: TextInputType.number,
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Please enter land area';
-            }
-            if (double.tryParse(value) == null) {
-              return 'Please enter a valid number';
-            }
-            return null;
-          },
-        ),
-        const SizedBox(height: 16),
-        _buildFormField(
-          controller: _surveyNumberController,
-          label: "Survey Number (Optional)",
-          hintText: "Enter land survey number",
-          icon: Icons.numbers,
-          validator: (value) {
-            return null; // Optional field
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDamageDetailsSection() {
-    return _buildSection(
-      title: "Damage Details",
-      icon: Icons.warning_amber,
-      children: [
-        _buildDropdownField(
-          controller: _damageTypeController,
-          label: "Type of Damage",
-          hintText: "Select damage type",
-          items: _damageTypes,
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Please select damage type';
-            }
-            return null;
-          },
-        ),
-        const SizedBox(height: 16),
-        _buildFormField(
-          controller: _damageDateController,
-          label: "Date of Damage",
-          hintText: "Select date",
-          icon: Icons.calendar_today,
-          readOnly: true,
-          onTap: () => _selectDate(context),
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Please select damage date';
-            }
-            return null;
-          },
-        ),
-        const SizedBox(height: 16),
-        _buildFormField(
-          controller: _estimatedLossController,
-          label: "Estimated Loss Amount (₹)",
-          hintText: "e.g., 15000",
-          icon: Icons.currency_rupee,
-          keyboardType: TextInputType.number,
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Please enter estimated loss';
-            }
-            if (double.tryParse(value) == null) {
-              return 'Please enter a valid amount';
-            }
-            return null;
-          },
-        ),
-        const SizedBox(height: 16),
-        _buildFormField(
-          controller: _descriptionController,
-          label: "Damage Description",
-          hintText: "Describe the damage in detail...",
-          icon: Icons.description,
-          maxLines: 4,
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Please describe the damage';
-            }
-            if (value.length < 20) {
-              return 'Description must be at least 20 characters';
-            }
-            return null;
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLocationSection() {
-    return _buildSection(
-      title: "Location Information",
-      icon: Icons.location_on,
-      children: [
-        _buildFormField(
-          controller: _locationController,
-          label: "Damage Location",
-          hintText: "Select location on map",
-          icon: Icons.map,
-          maxLines: 2,
-          readOnly: true,
-          onTap: _selectLocation,
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Please select damage location';
-            }
-            return null;
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildEvidenceSection() {
-    return _buildSection(
-      title: "Evidence & Documentation",
-      icon: Icons.attach_file,
-      children: [
-        Text(
-          "Add supporting evidence (photos, documents) - Will be stored in Firebase Storage",
-          style: TextStyle(
-            color: Colors.grey[600],
-            fontSize: 14,
-          ),
-        ),
-        const SizedBox(height: 12),
-
-        // Evidence Grid
-        if (_selectedEvidence.isNotEmpty) ...[
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
-              childAspectRatio: 1,
-            ),
-            itemCount: _selectedEvidence.length,
-            itemBuilder: (context, index) {
-              return Stack(
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey[300]!),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.photo, color: Colors.grey[500]),
-                        Text(
-                          'Evidence ${index + 1}',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Positioned(
-                    top: 4,
-                    right: 4,
-                    child: GestureDetector(
-                      onTap: () => _removeEvidence(index),
-                      child: Container(
-                        padding: const EdgeInsets.all(2),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.close,
-                          color: Colors.white,
-                          size: 12,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
-          const SizedBox(height: 12),
-        ],
-
-        // Add Evidence Button
-        Container(
-          width: double.infinity,
-          height: 100,
-          decoration: BoxDecoration(
-            color: Colors.grey[50],
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: Colors.grey[300]!,
-              style: BorderStyle.solid,
-            ),
-          ),
-          child: TextButton(
-            onPressed: _addEvidence,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.add_photo_alternate, color: Colors.grey[500]),
-                const SizedBox(height: 4),
-                Text(
-                  "Add Evidence",
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          "Supported: Photos (JPG, PNG), Documents (PDF) - Stored in Firebase Storage",
-          style: TextStyle(
-            color: Colors.grey[500],
-            fontSize: 12,
-          ),
-        ),
-      ],
     );
   }
 

@@ -1,5 +1,3 @@
-// ignore_for_file: unused_local_variable
-
 import 'package:flutter/material.dart';
 import '../../models/user_model.dart';
 import '../map/map_selection_page.dart';

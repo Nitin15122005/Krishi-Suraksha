@@ -1,11 +1,21 @@
 // ignore_for_file: prefer_const_constructors
-
+import 'package:agri_claim_mobile/models/farm_model.dart'; 
+import 'package:agri_claim_mobile/services/api_service.dart';
 import 'package:agri_claim_mobile/screens/claims/new_claim_page.dart';
 import 'package:flutter/material.dart';
 import 'claims_list_page.dart';
 
-class ClaimsReportPage extends StatelessWidget {
+class ClaimsReportPage extends StatefulWidget {
   ClaimsReportPage({super.key});
+
+  @override
+  State<ClaimsReportPage> createState() => _ClaimsReportPageState();
+}
+
+class _ClaimsReportPageState extends State<ClaimsReportPage> {
+  final ApiService _apiService = ApiService(); 
+  List<Farm> _farmList = []; 
+  bool _isLoadingFarms = true;
 
   // TODO: BACKEND - Replace with actual API data
   final Map<String, dynamic> _claimsStats = {
@@ -15,12 +25,58 @@ class ClaimsReportPage extends StatelessWidget {
   };
 
   @override
+  void initState() {
+    super.initState();
+    _loadInitialData();
+  }
+
+  Future<void> _loadInitialData() async {
+    // TODO: Fetch claim stats here
+    
+    try {
+      final farms = await _apiService.getFarms();
+      if (mounted) {
+        setState(() {
+          _farmList = farms;
+          _isLoadingFarms = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingFarms = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not load farms: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  void _navigateToFileClaim(BuildContext context) {
+    if (_isLoadingFarms) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Loading farm data, please wait...")),
+      );
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => NewClaimPage(farms: _farmList),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
+        automaticallyImplyLeading: false,
         title: Text(
           'Claims Report',
           style: TextStyle(
@@ -30,25 +86,18 @@ class ClaimsReportPage extends StatelessWidget {
           ),
         ),
         centerTitle: true,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.green[800]),
-          onPressed: () => Navigator.pop(context),
-        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Overview Section
             _buildOverviewSection(),
             const SizedBox(height: 30),
 
-            // Claims Status Cards
             _buildStatusCards(context),
             const SizedBox(height: 30),
 
-            // Quick Actions
             _buildQuickActions(context),
           ],
         ),
@@ -223,12 +272,7 @@ class ClaimsReportPage extends StatelessWidget {
                   icon: Icons.add_circle_outline,
                   color: Colors.green,
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => NewClaimPage(),
-                      ),
-                    );
+                    _navigateToFileClaim(context);
                   },
                 ),
               ),

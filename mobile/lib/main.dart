@@ -1,19 +1,9 @@
-// ignore_for_file: prefer_const_constructors
-
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'screens/auth/login_page.dart';
 import 'screens/dashboard/dashboard_page.dart';
-import 'screens/profile/profile_page.dart';
-import 'models/user_model.dart';
-import 'screens/claims/new_claim_page.dart';
-
+import 'services/storage_service.dart'; 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Initialize Firebase
-  await Firebase.initializeApp();
-
   runApp(const MyApp());
 }
 
@@ -27,46 +17,83 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.green,
         visualDensity: VisualDensity.adaptivePlatformDensity,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.green,
+          primary: Colors.green[800],
+        ),
+        appBarTheme: AppBarTheme(
+          backgroundColor: Colors.green[800],
+          foregroundColor: Colors.white, 
+        ),
       ),
-      home: const LoginPage(),
+      home: const AuthCheck(), 
       debugShowCheckedModeBanner: false,
-      routes: {
-        '/login': (context) => const LoginPage(),
-        '/dashboard': (context) => const DashboardPage(),
-        '/new-claim': (context) => NewClaimPage(),
-        '/profile': (context) {
-          // For demo purposes - in real app, you'd get user from auth state
-          final demoUser = UserModel(
-            farmerId: "FARMER_001", // Updated to farmerId
-            name: "John Farmer",
-            email: "john.farmer@email.com",
-            phoneNumber: "+91 9876543210",
-            profileImage: null,
-            isPhoneVerified: true,
-            isAadhaarVerified: true,
-            address: "Farm Address, Village, State",
-            aadharNumber: "123456789012",
-            farms: [
-              FarmModel(
-                farmId: "FARM_001",
-                ownerFarmerId: "FARMER_001",
-                location: "lat:19.0760,lon:72.8777",
-                cropType: "Wheat",
-                area: 5.2,
-                description: "Main wheat farm",
-              ),
-            ],
-            bankDetail: BankDetail(
-              accountHolderName: "John Farmer",
-              accountNumber: "12345678901",
-              ifscCode: "SBIN0000123",
-              bankName: "State Bank of India",
-              branch: "Main Branch",
+      
+    );
+  }
+}
+
+class AuthCheck extends StatefulWidget {
+  const AuthCheck({super.key});
+
+  @override
+  State<AuthCheck> createState() => _AuthCheckState();
+}
+
+class _AuthCheckState extends State<AuthCheck> {
+  final StorageService _storageService = StorageService();
+
+  @override
+  void initState() {
+    super.initState();
+    _checkLoginStatus();
+  }
+
+  Future<void> _checkLoginStatus() async {
+    await Future.delayed(const Duration(seconds: 1));
+
+    try {
+      final token = await _storageService.getToken();
+      
+      if (!mounted) return; 
+
+      if (token != null) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const DashboardPage()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginPage()),
+        );
+      }
+    } catch (e) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginPage()),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation(Colors.green),
             ),
-          );
-          return ProfilePage(user: demoUser);
-        },
-      },
+            SizedBox(height: 20),
+            Text(
+              'Loading Krishi Suraksha...',
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
