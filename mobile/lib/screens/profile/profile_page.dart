@@ -50,9 +50,16 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-     backgroundColor: Color(0xFFF7F9F5),
-      
-      body: SingleChildScrollView(
+  body: Container(
+//     decoration: BoxDecoration(  
+//   image: const DecorationImage(
+//     image: AssetImage('assets/image/Background.png'),
+//     fit: BoxFit.cover,
+    
+//     opacity:0,
+//   ),
+// ),
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
@@ -69,6 +76,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ],
         ),
       ),
+    ),
     );
   }
   BoxDecoration _cardDecoration() {
@@ -107,7 +115,7 @@ Widget _buildProfileHeader() {
           ),
           child: CircleAvatar(
             radius: 36,
-            backgroundImage: const AssetImage('assets/farmer.jpg'),
+            // backgroundImage: const AssetImage('assets/farmer.jpg'),
             backgroundColor: Colors.grey[200],
           ),
         ),
@@ -293,7 +301,7 @@ Widget _buildInfoItem({
   padding: const EdgeInsets.all(16),
   decoration: BoxDecoration(
     borderRadius: BorderRadius.circular(20),
-    color: const Color.fromARGB(207, 230, 240, 222),
+    color: const Color.fromARGB(255, 229, 242, 218),
   
   ),
   child: Column(
@@ -419,16 +427,18 @@ Widget _buildInfoItem({
             IconButton(
               icon: const Icon(Icons.edit, size: 18, color: Color(0xFF2E7D32)),
               onPressed: () async {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const BankDetailsPage(),
-                  ),
-                );
+                final result = await showModalBottomSheet(
+  context: context,
+  isScrollControlled: true, // IMPORTANT for full height
+  backgroundColor: Colors.transparent,
+  builder: (context) => const BankDetailsPage(),
+);
 
-                if (result == true) {
-                  _loadBankDetails();
-                }
+if (result == true) {
+  _loadBankDetails();
+}
+
+              
               },
             ),
           ],
@@ -503,16 +513,16 @@ Widget _buildPremiumEmptyState(BuildContext context) {
       // Button
       ElevatedButton(
         onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const BankDetailsPage(),
-            ),
-          );
+          final result = await showModalBottomSheet(
+  context: context,
+  isScrollControlled: true, // IMPORTANT for full height
+  backgroundColor: Colors.transparent,
+  builder: (context) => const BankDetailsPage(),
+);
 
-          if (result == true) {
-            _loadBankDetails();
-          }
+if (result == true) {
+  _loadBankDetails();
+}
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFFA9E981),
@@ -546,13 +556,15 @@ Widget _buildPremiumEmptyState(BuildContext context) {
           child: OutlinedButton.icon(
             onPressed: () => _showLogoutConfirmation(context),
             style: OutlinedButton.styleFrom(
+               backgroundColor: const Color.fromARGB(255, 239, 112, 103),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
-              side: BorderSide(color: Colors.red),
+               side: BorderSide(color: const Color.fromARGB(255, 239, 112, 103)),
+              
             ),
-            icon: Icon(Icons.logout, color: Colors.red),
-            label: Text("Logout", style: TextStyle(color: Colors.red)),
+            icon: Icon(Icons.logout, color: Colors.white),
+            label: Text("Logout", style: TextStyle(color: Colors.white)),
           ),
         ),
       ],
