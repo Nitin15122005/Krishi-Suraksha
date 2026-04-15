@@ -6,6 +6,7 @@ import '../models/farm_details_model.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/farm_model.dart';
 import '../models/bank_details_model.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class RegistrationResponse {
   final String farmerID;
@@ -63,7 +64,7 @@ class ApiService {
   // final String _baseUrl = "http://172.20.45.168:3000"; 
   // final String _baseUrl = "http://10.217.116.113:3000";
   // On Android emulator, use: "http://10.0.2.2:8080"
-  final String _baseUrl = "http://127.0.0.1:3000";
+  String get _baseUrl => dotenv.env['BASE_URL']!;
   final StorageService _storageService = StorageService();
 
   Future<String> requestOtp(String mobile, String aadhar) async {

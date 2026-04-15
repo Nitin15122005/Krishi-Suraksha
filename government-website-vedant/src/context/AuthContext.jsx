@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext } from 'react';
 import axios from 'axios';
 
-const API_BASE_URL = 'http://127.0.0.1:3000';
+const API_BASE_URL = 'https://9c21-49-248-21-6.ngrok-free.app';
 
 const AuthContext = createContext(null);
 

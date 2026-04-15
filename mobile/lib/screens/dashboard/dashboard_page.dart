@@ -3,6 +3,8 @@ import '../profile/profile_page.dart';
 import '../claims/claims_report_page.dart'; 
 import './home_page.dart';
 import './farms_page.dart';
+import 'package:curved_navigation_bar/curved_navigation_bar.dart';
+
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -28,64 +30,41 @@ class _DashboardPageState extends State<DashboardPage> {
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: IndexedStack(
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    body: Padding(
+      padding: const EdgeInsets.only(bottom: 0), // IMPORTANT
+      child: IndexedStack(
         index: _selectedIndex,
         children: _widgetOptions,
       ),
-      bottomNavigationBar: _buildBottomNavBar(),
-    );
-  }
+    ),
+    bottomNavigationBar: _buildBottomNavBar(),
+  );
+}
 
-  Widget _buildBottomNavBar() {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
-        child: BottomNavigationBar(
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home_rounded),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.assignment_outlined),
-              label: 'Claims',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.grass_rounded),
-              label: 'Farms',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              label: 'Profile',
-            ),
-          ],
-          currentIndex: _selectedIndex,
-          selectedItemColor: Colors.green[800],
-          unselectedItemColor: Colors.grey,
-          showUnselectedLabels: true,
-          type: BottomNavigationBarType.fixed,
-          onTap: _onItemTapped,
-        ),
-      ),
-    );
-  }
+
+Widget _buildBottomNavBar() {
+  return CurvedNavigationBar(
+    index: _selectedIndex,
+    height: 75.0,
+    items: <Widget>[
+      Icon(Icons.home_rounded, size: 30, color: _selectedIndex == 0 ? Colors.white : Colors.grey),
+      Icon(Icons.assignment_outlined, size: 30, color: _selectedIndex == 1 ? Colors.white : Colors.grey),
+      Icon(Icons.grass_rounded, size: 30, color: _selectedIndex == 2 ? Colors.white : Colors.grey),
+      Icon(Icons.person_outline, size: 30, color: _selectedIndex == 3 ? Colors.white : Colors.grey),
+    ],
+    color: Colors.black, // Background of the bar
+    buttonBackgroundColor:  const Color(0xFFA9E981), // Color of the floating circle
+    backgroundColor: Colors.transparent, // Match this to your Scaffold background
+    animationCurve: Curves.easeInOut,
+    animationDuration: const Duration(milliseconds: 400),
+    onTap: (index) {
+      _onItemTapped(index);
+    },
+    letIndexChange: (index) => true,
+  );
+}
+
 }
