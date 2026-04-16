@@ -1,5 +1,5 @@
 import 'package:agri_claim_mobile/screens/auth/login_page.dart';
-import 'package:agri_claim_mobile/screens/farm/farms_page.dart'; 
+import 'package:agri_claim_mobile/screens/dashboard/farms_page.dart'; 
 import 'package:agri_claim_mobile/models/bank_details_model.dart';
 import 'package:agri_claim_mobile/services/api_service.dart';
 import 'package:agri_claim_mobile/services/storage_service.dart';
@@ -301,7 +301,7 @@ Widget _buildInfoItem({
   padding: const EdgeInsets.all(16),
   decoration: BoxDecoration(
     borderRadius: BorderRadius.circular(20),
-    color: const Color.fromARGB(255, 229, 242, 218),
+    color: const Color(0xFFE5F2DA),
   
   ),
   child: Column(

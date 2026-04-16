@@ -148,26 +148,26 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             children: [
               _buildHeader(),
-              _buildLocationBar(),
-              _buildWeatherCard(),
+               _buildWeatherCard(),
               _buildMyFarmsSection(),
+              _buildQuickActions(),
+             
             ],
           ),
         );
     }
   }
 
-  Widget _buildHeader() {
-  String currentDate = "Today"; // We can improve this
+Widget _buildHeader() {
   return Container(
-    padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-    decoration: BoxDecoration(
-      color: Colors.green[800],
-      borderRadius: const BorderRadius.only(
+    padding: const EdgeInsets.fromLTRB(40, 10, 40, 24),
+    decoration: const BoxDecoration(
+      color: Color(0xFFE5F2DA),
+      borderRadius: BorderRadius.only(
         bottomLeft: Radius.circular(30),
         bottomRight: Radius.circular(30),
       ),
-    ), 
+    ),
     child: SafeArea(
       bottom: false,
       child: Row(
@@ -176,201 +176,305 @@ class _HomePageState extends State<HomePage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "Hello, $_farmerName", 
-                style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                "Hello, $_farmerName",
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
               const SizedBox(height: 4),
-              Text(
-                currentDate,
-                style: TextStyle(color: Colors.green[100], fontSize: 14),
+              const Text(
+                "Welcome back",
+                style: TextStyle(
+                  color: Color.fromARGB(255, 54, 58, 55),
+                  fontSize: 14,
+                ),
               ),
             ],
           ),
+
           const Spacer(),
+
+          // 🔔 Notification moved here
           IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white, size: 28),
-            onPressed: _fetchDashboardData, 
+            icon: const Badge(
+              label: Text('5'),
+              child: Icon(Icons.notifications_none, color: Colors.black),
+            ),
+            onPressed: () {},
+          ),
+
+          // 🔄 Refresh
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.black),
+            onPressed: _fetchDashboardData,
           ),
         ],
       ),
     ),
-  ); 
+  );
+}  
+  // --- Location/Notification Bar ---
+
+BoxDecoration _cardDecoration() {
+  return BoxDecoration(
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(22),
+    boxShadow: [
+      BoxShadow(
+        color: Colors.black.withOpacity(0.05),
+        blurRadius: 16,
+        offset: const Offset(0, 8),
+      ),
+    ],
+  );
+}
+  // --- Weather Card ---
+ Widget _buildWeatherCard() {
+  return Container(
+    margin: const EdgeInsets.all(20),
+    padding: const EdgeInsets.all(20),
+    decoration: _cardDecoration(),
+    child: _buildWeatherContent(),
+  );
 }
 
-  // --- Location/Notification Bar ---
-  Widget _buildLocationBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+ Widget _buildWeatherContent() {
+  if (_weatherData == null && _farmList.isNotEmpty) {
+    return const Center(child: CircularProgressIndicator());
+  }
+
+  if (_farmList.isEmpty) {
+    return const Center(child: Text("Add a farm to see weather info."));
+  }
+
+  return Column(
+    children: [
+      Icon(
+        _getWeatherIcon(_weatherData!.weatherCode),
+        size: 70,
+        color: const Color(0xFFA9E981),
+      ),
+
+      const SizedBox(height: 12),
+
+      Text(
+        '${_weatherData!.temperature.toStringAsFixed(0)}°C',
+        style: const TextStyle(
+          fontSize: 42,
+          fontWeight: FontWeight.bold,
+          color: Color(0xFF173300),
+        ),
+      ),
+
+      const SizedBox(height: 6),
+
+      Text(
+        _weatherData!.weatherCondition,
+        style: TextStyle(color: Colors.grey[600]),
+      ),
+
+      const SizedBox(height: 20),
+      const Divider(),
+      const SizedBox(height: 14),
+
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          Icon(Icons.menu, color: Colors.grey[800], size: 28),
-
-          // Farm Location Dropdown
-          if (_farmList.isNotEmpty) // Only show if farms exist
-            PopupMenuButton<Farm>(
-              onSelected: _onFarmSelected,
-              itemBuilder: (BuildContext context) {
-                return _farmList.map((farm) {
-                  return PopupMenuItem<Farm>(
-                    value: farm,
-                    child: Text(farm.farmID), // Show Farm ID in dropdown
-                  );
-                }).toList();
-              },
-              child: Row(
-                children: [
-                  Text(
-                    _selectedFarm?.farmID ?? "No Farms", // REAL DATA
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey[900]),
-                  ),
-                  Icon(Icons.arrow_drop_down, color: Colors.grey[700]),
-                ],
-              ),
-            ),
-          
-          if (_farmList.isEmpty) // Show if no farms
-            const Text("No Farms Added Yet", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-
-          IconButton(
-            icon: Badge(
-              label: const Text('5'),
-              child: Icon(Icons.notifications_none, color: Colors.grey[800], size: 28),
-            ),
-            onPressed: () {}, // TODO: Navigate to Notifications Page
-          ),
+          _buildWeatherStat(
+              '${_weatherData!.humidity.toStringAsFixed(0)}%', "Humidity"),
+          _buildWeatherStat(
+              '${_weatherData!.precipitation.toStringAsFixed(1)} mm', "Rain"),
+          _buildWeatherStat(
+              '${_weatherData!.windSpeed.toStringAsFixed(1)} m/s', "Wind"),
         ],
       ),
-    );
-  }
-
-  // --- Weather Card ---
-  Widget _buildWeatherCard() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Card(
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(24.0),
-          child: _buildWeatherContent(), // AnimatedSwitcher logic
-        ),
-      ),
-    );
-  }
-
-  Widget _buildWeatherContent() {
-    // Show a loading spinner *inside* the card
-    if (_weatherData == null && _farmList.isNotEmpty) {
-      return const Center(
-        key: ValueKey('weather_loading'),
-        child: CircularProgressIndicator(),
-      );
-    }
-
-    // Show message if no farms exist
-    if (_farmList.isEmpty) {
-       return const Center(
-        key: ValueKey('no_farms'),
-        child: Text("Add a farm to see weather info."),
-      );
-    }
-
-    // --- This is the main UI for when data is ready ---
-    return Column(
-      key: ValueKey('data-${_selectedFarm?.farmID}'),
-      children: [
-        Icon(_getWeatherIcon(_weatherData!.weatherCode), size: 80, color: Colors.blue[400]),
-        const SizedBox(height: 16),
-        Text(
-          '${_weatherData!.temperature.toStringAsFixed(0)}°C', // REAL DATA
-          style: TextStyle(fontSize: 64, fontWeight: FontWeight.bold, color: Colors.grey[900]),
-        ),
-
-        const SizedBox(height: 8),
-        Text(
-          _weatherData!.weatherCondition, // REAL DATA
-          style: TextStyle(fontSize: 16, color: Colors.grey[700]),
-        ),
-        const SizedBox(height: 24),
-        const Divider(),
-        const SizedBox(height: 16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _buildWeatherStat('${_weatherData!.humidity.toStringAsFixed(0)}%', "Humidity"),
-            _buildWeatherStat('${_weatherData!.precipitation.toStringAsFixed(1)} mm', "Precipitation"),
-            _buildWeatherStat('${_weatherData!.windSpeed.toStringAsFixed(1)} m/s', "Wind Speed"),
-          ],
-        ),
-      ],
-    );
-  }
-
+    ],
+  );
+}
   // --- My Farms Section ---
   Widget _buildMyFarmsSection() {
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                "My farms",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+  return Container(
+    margin: const EdgeInsets.all(20),
+    padding: const EdgeInsets.all(18),
+    decoration: _cardDecoration(),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 🔹 Header
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              "My Farms",
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF173300),
               ),
-              TextButton(
-                onPressed: () {
-                  // TODO: This should tap the 'Farms' tab
-                },
-                child: const Text("View all"),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          
-          if (_farmList.isEmpty) // Show if no farms
-            const Center(child: Text("You haven't added any farms yet.")),
+            ),
+            TextButton(
+              onPressed: () {},
+              child: const Text("View all"),
+            ),
+          ],
+        ),
 
-          // Farm List
-          ListView.builder(
-            itemCount: _farmList.length > 3 ? 3 : _farmList.length,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemBuilder: (context, index) {
-              final farm = _farmList[index];
-              return Card(
-                elevation: 0.5,
-                margin: const EdgeInsets.only(bottom: 10),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: ListTile(
-                  title: Text(farm.farmID), // REAL DATA
-                  subtitle: Text("Crop: ${farm.cropType}  |  Status: ${farm.status}"), // REAL DATA
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => FarmDetailsPage(farmID: farm.farmID),
-                      ),
-                    );
-                  },
-                ),
-              );
-            },
+        const SizedBox(height: 12),
+
+        // 🔹 Empty State
+        if (_farmList.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 20),
+            child: Center(
+              child: Text(
+                "No farms added yet",
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
           ),
-        ],
+
+        // 🔹 Scrollable Area (FIXED HEIGHT)
+        if (_farmList.isNotEmpty)
+          SizedBox(
+            
+            height: 160, // 🔥 FIXED HEIGHT
+            child: ListView.builder(
+              padding: EdgeInsets.zero,
+              itemCount: _farmList.length,
+              physics: const BouncingScrollPhysics(),
+              itemBuilder: (context, index) {
+                final farm = _farmList[index];
+
+                final isSelected =
+                    _selectedFarm?.farmID == farm.farmID;
+
+                return GestureDetector(
+                  onTap: () {
+                    _onFarmSelected(farm);
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? const Color(0xFFEAF5E4) // selected highlight
+                          : const Color(0xFFF8F8F8),
+                      borderRadius: BorderRadius.circular(14),
+                      border: isSelected
+                          ? Border.all(color: const Color.fromARGB(93, 80, 161, 81), width: 1)
+                          : null,
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.eco,
+                        color: Color(0xFF000000)),
+                            // color: Color(0xFFA9E981)),
+                        const SizedBox(width: 10),
+
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment:
+                                CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                farm.farmID,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              Text(
+                                "Crop: ${farm.cropType}",
+                                style: TextStyle(
+                                    color: Colors.grey[600]),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const Icon(Icons.arrow_forward_ios,
+                            size: 14),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+      ],
+    ),
+  );
+}
+
+Widget _buildQuickActions() {
+  return Container(
+    margin: const EdgeInsets.all(20),
+    padding: const EdgeInsets.all(6),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(60),
+    ),
+    child: Row(
+      children: [
+        _actionPill(
+          icon: Icons.add,
+          label: "Add Farm",
+          isActive: true,
+          onTap: () {},
+        ),
+        const SizedBox(width: 8),
+        _actionPill(
+          icon: Icons.analytics_outlined,
+          label: "Prediction",
+          onTap: () {},
+        ),
+        const SizedBox(width: 8),
+        _actionPill(
+          icon: Icons.description_outlined,
+          label: "Reports",
+          onTap: () {},
+        ),
+      ],
+    ),
+  );
+}
+Widget _actionPill({
+  required IconData icon,
+  required String label,
+  bool isActive = false,
+  required VoidCallback onTap,
+}) {
+  return Expanded(
+    child: GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        decoration: BoxDecoration(
+          color: isActive ? const Color(0xFFA9E981) : Colors.grey[100],
+          borderRadius: BorderRadius.circular(48),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 18, color: Colors.black),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: const TextStyle(
+                fontWeight: FontWeight.w500,
+                color: Colors.black,
+              ),
+            ),
+          ],
+        ),
       ),
-    );
-  }
-  
+    ),
+  );
+
+}
   // Helper for the small weather stat columns
-  Widget _buildWeatherStat(String value, String label) {
+   Widget _buildWeatherStat(String value, String label) {
     return Column(
       children: [
         Text(
